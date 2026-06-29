@@ -39,6 +39,8 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
 };
 
+import Script from "next/script"; // 1. Add this import at the top of your file
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -58,6 +60,20 @@ export default function RootLayout({
           <ClientLayout>{children}</ClientLayout>
         </Providers>
         <Analytics />
+
+        {/* 2. Add the Google Search Brand Schema right here */}
+        <Script
+          id="schema-org-branding"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "TilawaNow",
+              "url": "https://tilawanow.vercel.app",
+            }),
+          }}
+        />
       </body>
     </html>
   );
