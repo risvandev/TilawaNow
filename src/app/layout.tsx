@@ -36,6 +36,9 @@ export const metadata: Metadata = {
     description: "Read, listen, and reflect on the Holy Quran through a modern and respectful digital experience.",
     images: ["/og-image.png"],
   },
+  verification: {
+    google: "ocIOVZe3l3sNdnDfLVN2NRpcLTvCQXF1MY37V4slakk",
+  },
   manifest: "/manifest.webmanifest",
 };
 
