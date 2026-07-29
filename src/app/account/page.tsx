@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Mail, CheckCircle2, ChevronLeft } from "lucide-react";
@@ -13,7 +12,6 @@ import Link from "next/link";
 
 
 const Login = () => {
-    const navigate = useRouter();
     const { toast } = useToast();
     const { signInWithGoogle } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
@@ -82,27 +80,16 @@ const Login = () => {
                 </Link>
             </div>
 
-            <div className="relative z-10 w-full max-w-md animate-fade-in-up">
-                {/* Glass Panel */}
-                <div className="bg-secondary/40 backdrop-blur-3xl border border-white/[0.08] shadow-2xl shadow-black/40 rounded-[2.5rem] p-8 md:p-10 relative overflow-hidden group hover:bg-secondary/50 hover:border-white/[0.12] transition-all duration-500">
-                    {/* Subtle inner glow orb */}
-                    <div className="absolute -top-24 -right-12 w-48 h-48 bg-primary/20 rounded-full blur-[60px] pointer-events-none" />
-                    
-                    <div className="flex justify-center mb-8 relative z-10">
-                        <Logo 
-                            iconClassName="w-12 h-12 p-2 bg-primary/10 rounded-2xl border border-primary/20 shadow-inner"
-                            textClassName="text-2xl font-bold text-foreground tracking-tight"
-                            arabicClassName="hidden"
-                        />
-                    </div>
+            <div className="relative z-10 w-full max-w-md animate-fade-in-up mt-8">
+                {/* Minimal Container */}
+                <div className="w-full relative">
 
-                    <div className="text-center mb-8 relative z-10">
-                        <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-2 drop-shadow-sm">
-                            {emailSent ? "Check your email" : "Welcome Back"}
-                        </h1>
-                        <p className="text-muted-foreground/80 text-sm font-medium">
-                            {emailSent ? `We've sent a magic link to ${email}` : "Continue your spiritual journey."}
-                        </p>
+                    <div className="flex justify-center mb-8 relative z-10">
+                        <Logo
+                            iconClassName="w-12 h-12"
+                            textClassName="text-2xl font-bold text-foreground tracking-tight"
+                            disableAnimation={true}
+                        />
                     </div>
 
                     <div className="relative z-10">
@@ -114,8 +101,8 @@ const Login = () => {
                                 <p className="text-center text-muted-foreground leading-relaxed text-sm">
                                     Click the secure link we sent to instantly access your account.
                                 </p>
-                                <Button 
-                                    variant="ghost" 
+                                <Button
+                                    variant="ghost"
                                     className="mt-2 text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-xl"
                                     onClick={() => setEmailSent(false)}
                                 >
@@ -181,17 +168,6 @@ const Login = () => {
                     </div>
                 </div>
 
-                <div className="mt-8 text-center px-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
-                    <p className="font-arabic text-2xl md:text-3xl text-foreground mb-4 drop-shadow-sm">
-                        أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ
-                    </p>
-                    <p className="text-sm md:text-base text-muted-foreground/90 italic font-medium tracking-wide">
-                        "Verily, in the remembrance of Allah do hearts find rest."
-                    </p>
-                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-premium-accent/80 mt-3">
-                        Surah Ar-Ra'd 13:28
-                    </p>
-                </div>
             </div>
         </div>
     );

@@ -92,75 +92,40 @@ export async function POST(req: Request) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>You Have Been Invited</title>
 </head>
+<body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff;">
+  <div style="max-width: 500px; margin: 0; text-align: left;">
+    
+    <!-- Logo -->
+    <img src="https://${siteUrl}/icon%20for%20app.png" alt="TilawaNow" width="48" height="48" style="display: block; margin-bottom: 24px; border-radius: 12px;">
+    
+    <!-- Heading -->
+    <h1 style="color: #000000; font-size: 28px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.5px;">You've been invited.</h1>
+    
+    <!-- Subheading -->
+    <p style="color: #666666; font-size: 18px; font-weight: 400; margin: 0 0 32px 0;">
+      Join TilawaNow to begin your spiritual journey.
+    </p>
 
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background-color:#f5f5f5;">
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="padding:40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-          style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
-
-          <!-- Header -->
-                <tr>
-                  <td style="background-color:#648CB4;padding:32px 20px;text-align:center;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-                      <tr>
-                        <td style="padding-right:12px;">
-                          <img src="https://raw.githubusercontent.com/tXHsesaMSeckjpitHoikGaqDGnfiuvnslva/Logo---Tadabbur---quran/refs/heads/main/tadabbur/favicon-160x160.png"
-                               alt="TilawaNow Logo"
-                               width="40"
-                               style="display:block;height:auto;">
-                        </td>
-                        <td style="font-size:20px;font-weight:600;color:#ffffff;line-height:1;">
-                          TilawaNow
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-
-          <!-- Content -->
-          <tr>
-            <td style="padding:50px 40px;">
-              <h2 style="margin:0 0 20px;font-size:24px;font-weight:600;color:#111318;">
-                You have been invited
-              </h2>
-
-              <p style="margin:0 0 20px;font-size:16px;color:#111318;line-height:1.6;">
-                <strong>${safeFromName}</strong> invited you to create a user on <strong>${siteUrl}</strong>.
-                Follow the link below to accept the invitation and start your journey with the Qur’an.
-              </p>
-
-              <!-- CTA -->
-              <div style="text-align:center;margin:35px 0;">
-                <a href="${safeInviteLink}"
-                   style="display:inline-block;padding:14px 30px;background:#648CB4;color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;border-radius:8px;">
-                  Accept the invitation
-                </a>
-              </div>
-
-              <p style="margin:0;font-size:15px;color:#111318;line-height:1.6;">
-                If you were not expecting this invitation, you can safely ignore this email.
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background:#111318;padding:30px 40px;text-align:center;">
-              <p style="margin:0 0 8px;font-size:14px;color:#ffffff;">
-                © ${new Date().getFullYear()} TilawaNow. All rights reserved.
-              </p>
-              <p style="margin:0;font-size:13px;color:#a0a0a0;">
-                This is an automated invitation email sent via Nodemailer. Please do not reply.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
+    <!-- Text -->
+    <p style="color: #000000; font-size: 16px; font-weight: 400; line-height: 1.6; margin: 0 0 32px 0;">
+      <strong>${safeFromName}</strong> has invited you to join TilawaNow, a beautifully designed, distraction-free Quran reading experience. Accept the invitation below to set up your account and start reading immediately.
+    </p>
+    
+    <!-- Button -->
+    <p style="margin: 0 0 40px 0;">
+      <a href="${safeInviteLink}" style="display: inline-block; background-color: #000000; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 28px; border-radius: 8px;">
+        Accept Invitation
+      </a>
+    </p>
+    
+    <!-- Footer -->
+    <div style="border-top: 1px solid #eaeaea; padding-top: 24px;">
+      <p style="color: #888888; font-size: 14px; font-weight: 400; margin: 0;">
+        If you weren't expecting this invitation, you can safely ignore this email.
+      </p>
+    </div>
+    
+  </div>
 </body>
 </html>
     `;

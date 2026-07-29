@@ -9,6 +9,7 @@ interface LogoProps {
     iconClassName?: string; // For the icon container or image
     showText?: boolean; // Option to hide text if needed
     arabicClassName?: string; // Optional specific sizes for Arabic text
+    disableAnimation?: boolean; // Option to disable language shifting
 }
 
 export const Logo = ({
@@ -16,11 +17,13 @@ export const Logo = ({
     textClassName,
     iconClassName,
     showText = true,
-    arabicClassName = "text-lg md:text-xl"
+    arabicClassName = "text-lg md:text-xl",
+    disableAnimation = false
 }: LogoProps) => {
     const [showArabic, setShowArabic] = useState(false);
     const [isFading, setIsFading] = useState(false);
     useEffect(() => {
+        if (disableAnimation) return;
         const interval = setInterval(() => {
             setIsFading(true);
             setTimeout(() => {
