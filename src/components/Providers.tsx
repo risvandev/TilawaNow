@@ -65,7 +65,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         shadow="0 0 10px hsl(var(--primary)),0 0 5px hsl(var(--primary))"
       />
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <PWAProvider>
             <TooltipProvider>
               <AuthProvider>
