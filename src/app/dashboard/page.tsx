@@ -179,14 +179,14 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-background overflow-x-hidden font-sans pb-32 md:pb-0">
+    <div className="relative w-full bg-background overflow-x-clip font-sans md:pb-8">
       
       {/* Ambient Mac-like Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[140px] pointer-events-none opacity-60 mix-blend-screen" />
       <div className="absolute top-[30%] right-[-10%] w-[40%] h-[40%] rounded-full bg-premium-accent/10 blur-[140px] pointer-events-none opacity-50 mix-blend-screen" />
       <div className="absolute bottom-[-10%] left-[20%] w-[30%] h-[30%] rounded-full bg-white/5 blur-[120px] pointer-events-none mix-blend-screen" />
 
-      <div className="relative z-10 container mx-auto px-4 md:px-8 py-4 md:py-12 lg:py-20 max-w-7xl">
+      <div className="relative z-10 container mx-auto px-4 md:px-8 pt-4 pb-0 md:py-12 lg:py-20 max-w-7xl">
         
         {/* Header */}
         <div className="flex items-center justify-between gap-4 mb-8 md:mb-12 animate-fade-in-up mt-2 md:mt-0 p-4 md:p-0 bg-secondary/30 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none rounded-[2rem] md:rounded-none border border-white/10 md:border-transparent shadow-lg shadow-black/20 md:shadow-none">
@@ -345,23 +345,18 @@ const Dashboard = () => {
           
           {/* Reading Activity Area Chart - Spans 8 cols */}
           <div className={cn(glassPanelClass, "md:col-span-8 flex flex-col animate-fade-in-up")} style={{ animationDelay: '200ms', animationFillMode: 'forwards', opacity: 0 }}>
-            <div className="flex items-center justify-between mb-4 md:mb-8 relative z-10">
+            <div className="flex items-center justify-between mb-4 relative z-10">
               <div className="flex items-center gap-3">
-                <div className="hidden md:flex w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 items-center justify-center text-primary">
-                  <Activity className="w-5 h-5" />
-                </div>
                 <div>
-                  <p className="md:hidden text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Reading Activity</p>
-                  <h3 className="text-lg md:text-lg font-extrabold md:font-bold text-foreground tracking-tight">
-                    <span className="md:hidden">Past 14 Days</span>
-                    <span className="hidden md:inline">Reading Activity</span>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Reading Activity</p>
+                  <h3 className="text-lg font-extrabold text-foreground tracking-tight">
+                    Past 14 Days
                   </h3>
-                  <p className="hidden md:block text-xs text-muted-foreground font-medium">Ayahs read over the last 14 days</p>
                 </div>
               </div>
             </div>
             
-            <div ref={chartScrollRef} className="h-[240px] md:h-[270px] w-full relative z-10 overflow-x-auto overflow-y-hidden scrollbar-none [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden mt-2 md:mt-10">
+            <div ref={chartScrollRef} className="h-[240px] md:h-[270px] w-full relative z-10 overflow-x-auto overflow-y-hidden scrollbar-none [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden mt-2">
               <div className="h-full min-w-[550px] md:min-w-[700px] pt-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={activityData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
@@ -411,38 +406,31 @@ const Dashboard = () => {
           <div className="md:col-span-4 flex flex-col gap-6">
             
             <div className={cn(glassPanelClass, "flex-1 animate-fade-in-up")} style={{ animationDelay: '250ms', animationFillMode: 'forwards', opacity: 0 }}>
-              <div className="flex items-center gap-3 mb-4 md:mb-6 relative z-10">
-                <div className="hidden md:flex w-10 h-10 rounded-xl bg-white/5 border border-white/10 items-center justify-center text-foreground">
-                  <Clock className="w-5 h-5" />
-                </div>
+              <div className="flex items-center gap-3 mb-4 relative z-10">
                 <div>
-                  <p className="md:hidden text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Activity History</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Activity History</p>
                   <h3 className="text-lg font-bold text-foreground tracking-tight">Recent Sessions</h3>
                 </div>
               </div>
               
-              <div className="relative z-10 pl-4 md:pl-0 space-y-4 md:space-y-3 border-l-2 border-white/10 md:border-l-0 ml-2 md:ml-0">
+              <div className="relative z-10 pl-4 space-y-4 border-l-2 border-white/10 ml-2">
                 {recentSessions.length > 0 ? (
                   recentSessions.map((activity, index) => (
-                    <div key={index} className="relative group flex items-baseline justify-between p-0 md:p-4 rounded-none md:rounded-2xl bg-transparent md:bg-white/[0.02] border-none md:border md:border-white/5 hover:bg-white/[0.06] transition-all duration-300">
-                      {/* Mobile Timeline Node Dot */}
-                      <span className="md:hidden absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background shadow-sm shadow-primary" />
+                    <div key={index} className="relative group flex flex-col justify-center p-0 rounded-none bg-transparent border-none">
+                      {/* Timeline Node Dot */}
+                      <span className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background shadow-sm shadow-primary" />
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2">
-                          <p className="font-bold text-base md:text-sm text-foreground truncate">{activity.surah}</p>
+                          <p className="font-bold text-base text-foreground truncate">{activity.surah}</p>
                           <span className="text-xs font-semibold text-primary">· Ayah {activity.ayahs}</span>
                         </div>
-                        <p className="text-[11px] text-muted-foreground/60 font-medium md:hidden mt-0.5">{activity.date}</p>
-                      </div>
-
-                      <div className="hidden md:block text-right shrink-0">
-                        <p className="text-xs text-muted-foreground">{activity.date.split(',')[0]}</p>
+                        <p className="text-[11px] text-muted-foreground/60 font-medium mt-0.5">{activity.date}</p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 px-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                  <div className="py-4">
                     <p className="text-sm text-muted-foreground">No recent activity.</p>
                   </div>
                 )}
@@ -450,34 +438,17 @@ const Dashboard = () => {
             </div>
 
             {suggestion && (
-               <div className={cn(glassPanelClass, "animate-fade-in-up p-4 md:p-6")} style={{ animationDelay: '300ms', animationFillMode: 'forwards', opacity: 0 }}>
-                 <div className="hidden md:block absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50 rounded-[2rem]" />
-                 
-                 {/* Desktop Suggestion Card */}
-                 <div className="hidden md:flex relative z-10 flex-col items-center text-center">
-                   <div className="w-12 h-12 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center mb-4">
-                     <Flame className="w-6 h-6" />
-                   </div>
-                   <h4 className="font-bold text-foreground mb-1">{suggestion.title}</h4>
-                   <p className="text-xs text-muted-foreground mb-5">{suggestion.subtitle}</p>
-                   <Button asChild variant="hero" className="w-full rounded-xl shadow-lg shadow-black/20">
-                     <Link onClick={() => unlockAudio()} href={suggestion.link}>Go to {suggestion.type === 'unread' ? 'Surah' : 'Ayah'}</Link>
-                   </Button>
-                 </div>
-
-                 {/* Mobile Minimal White Button */}
-                 <div className="md:hidden">
-                   <Button asChild className="flex flex-col items-center justify-center w-full h-14 rounded-[2rem] bg-white text-black hover:bg-white/90 border-none transition-all font-semibold relative z-10 shadow-2xl p-0">
-                     <Link onClick={() => unlockAudio()} href={suggestion.link} className="flex flex-col items-center justify-center gap-0 leading-none">
-                       <div className="text-black font-extrabold text-base leading-none">
-                         <span>{suggestion.title}</span>
-                       </div>
-                       <span className="text-[11px] text-black/75 font-medium leading-none -mt-0.5">
-                         ({suggestion.subtitle})
-                       </span>
-                     </Link>
-                   </Button>
-                 </div>
+               <div className={cn(glassPanelClass, "animate-fade-in-up p-4")} style={{ animationDelay: '300ms', animationFillMode: 'forwards', opacity: 0 }}>
+                 <Button asChild className="flex flex-col items-center justify-center w-full h-14 rounded-[2rem] bg-white text-black hover:bg-white/90 border-none transition-all font-semibold relative z-10 shadow-2xl p-0 group">
+                   <Link onClick={() => unlockAudio()} href={suggestion.link} className="flex flex-col items-center justify-center gap-0.5 leading-none">
+                     <div className="text-black font-extrabold text-base leading-none group-hover:scale-105 transition-transform duration-300">
+                       <span>{suggestion.title}</span>
+                     </div>
+                     <span className="text-[11px] text-black/75 font-medium leading-none">
+                       ({suggestion.subtitle})
+                     </span>
+                   </Link>
+                 </Button>
                </div>
             )}
             
@@ -485,7 +456,7 @@ const Dashboard = () => {
         </div>
 
         {/* Third Row: Active Days Leaderboard + Achievements */}
-        <div className="grid grid-cols-1 gap-4 md:gap-6 auto-rows-min mb-12">
+        <div className="grid grid-cols-1 gap-4 md:gap-6 auto-rows-min mb-0 md:mb-12">
 
            {/* Active Days — Standalone Leaderboard Card (Mobile) */}
            <div className="md:hidden animate-fade-in-up bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 rounded-[2rem] p-5 relative overflow-hidden" style={{ animationDelay: '380ms', animationFillMode: 'forwards', opacity: 0 }}>
@@ -513,79 +484,59 @@ const Dashboard = () => {
              </div>
            </div>
 
-           {/* Achievements (3 remaining + Active Days on Desktop) */}
-           <div className={cn(glassPanelClass, "animate-fade-in-up bg-white/[0.02] border border-white/5 rounded-[2rem] p-5 md:p-6 md:bg-transparent md:border-none md:rounded-none")} style={{ animationDelay: '400ms', animationFillMode: 'forwards', opacity: 0 }}>
-              <div className="flex items-center gap-3 mb-6 md:mb-8 relative z-10">
-                <div className="hidden md:flex w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 items-center justify-center text-yellow-500">
-                  <Award className="w-5 h-5" />
-                </div>
+           {/* Achievements */}
+           <div className={cn(glassPanelClass, "animate-fade-in-up p-5 md:p-6")} style={{ animationDelay: '400ms', animationFillMode: 'forwards', opacity: 0 }}>
+              <div className="flex items-center justify-between mb-6 relative z-10">
                 <div>
-                  <p className="md:hidden text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Milestones</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Milestones</p>
                   <h3 className="text-lg font-bold text-foreground tracking-tight">Achievements</h3>
-                  <p className="hidden md:block text-xs text-muted-foreground font-medium">Your lifetime milestones</p>
                 </div>
+                <Link href="/leaderboard" className="hidden md:flex items-center justify-center px-5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-bold text-foreground hover:bg-white/10 transition-all hover:scale-105">
+                  View Community Leaderboard
+                </Link>
               </div>
 
-              <div className="flex flex-col gap-4 md:grid md:grid-cols-4 md:gap-4 relative z-10">
+              <div className="flex flex-col gap-5 md:grid md:grid-cols-2 md:gap-8 relative z-10">
                 {[
                   { 
                     label: "Active Days", 
                     value: `${userStats.totalActiveDays}`, 
                     displayValue: `${userStats.totalActiveDays} / ${userStats.totalActiveDays < 7 ? 7 : userStats.totalActiveDays < 30 ? 30 : userStats.totalActiveDays < 100 ? 100 : 365} Days`, 
                     progress: Math.min(100, (userStats.totalActiveDays / (userStats.totalActiveDays < 7 ? 7 : userStats.totalActiveDays < 30 ? 30 : userStats.totalActiveDays < 100 ? 100 : 365)) * 100), 
-                    unlocked: userStats.totalActiveDays > 0,
-                    desktopOnly: false,
-                    mobileOnly: false
+                    unlocked: userStats.totalActiveDays > 0
                   },
                   { 
                     label: "Quran Read", 
                     value: `${((userStats.uniqueAyahsRead / QURAN_STATS.totalAyahs) * 100).toFixed(1)}%`, 
                     displayValue: `${((userStats.uniqueAyahsRead / QURAN_STATS.totalAyahs) * 100).toFixed(1)}%`, 
                     progress: Math.min(100, (userStats.uniqueAyahsRead / QURAN_STATS.totalAyahs) * 100), 
-                    unlocked: userStats.uniqueAyahsRead > 0,
-                    desktopOnly: false,
-                    mobileOnly: false
+                    unlocked: userStats.uniqueAyahsRead > 0
                   },
                   { 
                     label: "Surahs", 
                     value: `${totalSurahsStarted}`, 
                     displayValue: `${totalSurahsStarted} / 114 Surahs`, 
                     progress: Math.min(100, (totalSurahsStarted / 114) * 100), 
-                    unlocked: totalSurahsStarted > 0,
-                    desktopOnly: false,
-                    mobileOnly: false
+                    unlocked: totalSurahsStarted > 0
                   },
                   { 
                     label: "Total Ayahs", 
                     value: `${totalAyahsRead}`, 
                     displayValue: `${totalAyahsRead} / 6,236 Ayahs`, 
                     progress: Math.min(100, (totalAyahsRead / 6236) * 100), 
-                    unlocked: totalAyahsRead > 0,
-                    desktopOnly: false,
-                    mobileOnly: false
+                    unlocked: totalAyahsRead > 0
                   },
                 ].map((achievement, index) => (
                   <div 
                     key={index} 
                     className={cn(
-                      "p-0 md:p-6 rounded-none md:rounded-2xl border-none md:border flex flex-col justify-center gap-2 md:gap-3 transition-all duration-300",
+                      "p-0 flex flex-col justify-center transition-all duration-300",
                       achievement.label === "Active Days" ? "hidden md:flex" : "",
-                      achievement.unlocked 
-                        ? "md:bg-white/[0.04] md:border-white/10 md:hover:bg-white/[0.08] md:hover:border-white/20 md:hover:-translate-y-1 md:shadow-lg" 
-                        : "md:bg-black/20 md:border-transparent opacity-70 md:opacity-40 md:grayscale"
+                      !achievement.unlocked && "opacity-70 md:opacity-50 md:grayscale"
                     )}
                   >
-                    {/* Desktop Circle View */}
-                    <div className={cn(
-                      "hidden md:flex w-14 h-14 rounded-full items-center justify-center text-lg font-bold shadow-inner mx-auto",
-                      achievement.unlocked ? "bg-primary/20 text-primary border border-primary/20" : "bg-white/5 text-white/40"
-                    )}>
-                      {achievement.value}
-                    </div>
-                    <span className="hidden md:block text-sm font-bold text-foreground tracking-wide text-center">{achievement.label}</span>
-
-                    {/* Mobile Minimal Layout with Progressive Bar */}
-                    <div className="md:hidden flex flex-col gap-1.5 w-full">
+                    {/* Minimal Layout with Progressive Bar (for both Desktop & Mobile) */}
+                    <div className="flex flex-col gap-2 w-full">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-foreground tracking-wide">{achievement.label}</span>
                         <span className="text-xs font-semibold text-primary">{achievement.displayValue}</span>

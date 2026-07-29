@@ -232,7 +232,7 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
   }
 
   return (
-    <div className="min-h-screen flex w-full bg-background selection:bg-primary/20">
+    <div className="min-h-[100dvh] flex w-full bg-background selection:bg-primary/20">
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <AppSidebar />
@@ -243,10 +243,10 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
 
       <main
         className={cn(
-          "flex-1 transition-all duration-300 min-h-screen",
+          "flex-1 transition-all duration-300",
           "ml-0 md:ml-16", // Base mobile: no margin, Base desktop: collapsed margin
           shouldShowExpanded && "md:ml-56", // Expanded desktop margin
-          isPlayerActive ? "pb-40 md:pb-0" : "pb-20 md:pb-0", // Extra padding when player active on mobile
+          isPlayerActive ? "pb-36 md:pb-0" : "pb-16 md:pb-0", // Extra padding when player active on mobile
           "max-md:!ml-0 max-md:!pl-0 max-md:w-full" // Force reset for mobile
         )}
       >

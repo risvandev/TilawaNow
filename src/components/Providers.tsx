@@ -75,9 +75,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                       <AudioPlayerProvider>
                         <KhatmahProvider>
                           <SidebarProvider>
-                            <div className="relative flex flex-col min-h-screen">
                               {children}
-                            </div>
                           </SidebarProvider>
                           <GlobalAudioPlayer />
                           <GlobalPrefetch />
