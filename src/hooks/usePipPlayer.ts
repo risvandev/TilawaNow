@@ -26,28 +26,28 @@ export function usePipPlayer() {
         currentVerseKey,
         currentVerse,
         currentWordPosition,
-        currentTime,
-        duration,
+        surahCurrentTime,
+        surahDuration,
         togglePlay,
         playNext,
         playPrev,
-        seek,
+        seekSurah,
     } = useAudioPlayer();
 
     // Use refs to avoid stale closures in PiP event listeners
     const togglePlayRef = useRef(togglePlay);
     const playNextRef = useRef(playNext);
     const playPrevRef = useRef(playPrev);
-    const seekRef = useRef(seek);
-    const durationRef = useRef(duration);
+    const seekSurahRef = useRef(seekSurah);
+    const surahDurationRef = useRef(surahDuration);
 
     useEffect(() => {
         togglePlayRef.current = togglePlay;
         playNextRef.current = playNext;
         playPrevRef.current = playPrev;
-        seekRef.current = seek;
-        durationRef.current = duration;
-    }, [togglePlay, playNext, playPrev, seek, duration]);
+        seekSurahRef.current = seekSurah;
+        surahDurationRef.current = surahDuration;
+    }, [togglePlay, playNext, playPrev, seekSurah, surahDuration]);
 
     // Inject self-contained CSS into the PiP window document
     const injectStyles = useCallback((doc: Document) => {
@@ -83,8 +83,8 @@ export function usePipPlayer() {
                 background: transparent;
             }
             :root {
-                --primary: 210 35% 55%;
-                --primary-foreground: 0 0% 100%;
+                --primary: 0 0% 100%;
+                --primary-foreground: 0 0% 10%;
                 color-scheme: dark;
             }
             .pip-root {
@@ -93,87 +93,99 @@ export function usePipPlayer() {
                 display: flex;
                 flex-direction: column;
                 background: rgba(10, 12, 18, 0.97);
-                border-radius: 14px;
+                border-radius: 0;
                 overflow: hidden;
                 backdrop-filter: blur(20px);
                 border: 1px solid rgba(255,255,255,0.07);
                 box-shadow: 0 24px 64px rgba(0,0,0,0.6);
             }
-            .pip-top { padding: 12px 16px 4px; flex-shrink: 0; }
-            .pip-meta { display: flex; align-items: baseline; justify-content: center; gap: 8px; text-align: left; }
-            .pip-icon {
-                font-size: 18px; font-weight: 800;
-                color: hsl(210 35% 55%);
-                opacity: 0.6;
-                font-family: 'Inter', system-ui, sans-serif;
-                flex-shrink: 0;
-            }
-            .pip-titles { flex: 0 1 auto; min-width: 0; }
-            .pip-surah { font-size: 14px; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
-            .pip-verse { font-size: 10px; color: #94a3b8; font-weight: 500; margin-top: -1px; }
-            .pip-arabic {
-                flex: 1; padding: 8px 20px;
-                direction: rtl; text-align: center;
-                font-size: 24px; line-height: 1.45;
-                color: #e2e8f0;
+            
+            .pip-top { padding: 12px 16px 4px; flex-shrink: 0; text-align: center; }
+            .pip-meta { display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+            .pip-titles { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; justify-content: center; }
+            .pip-surah { font-size: 14px; font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+            .pip-verse { font-size: 12px; color: #94a3b8; font-weight: 500; }
+            
+            .pip-content-area {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
                 overflow-y: auto;
+                overflow-x: hidden;
+                scroll-behavior: smooth;
+            }
+            
+            .pip-arabic {
+                padding: 12px 20px 12px;
+                direction: rtl; text-align: center;
+                font-size: 24px; line-height: 1.5;
+                color: #e2e8f0;
                 display: flex;
                 flex-wrap: wrap;
                 align-items: center;
                 justify-content: center;
                 gap: 4px;
+                margin: auto 0;
+                scroll-behavior: smooth;
             }
             .pip-word {
                 display: inline-block;
                 padding: 0 4px;
-                border-radius: 4px;
-                transition: all 0.2s ease;
+                border-radius: 6px;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             }
             .pip-word-highlight {
                 color: #ffffff;
-                background: hsla(210, 35%, 55%, 0.2);
-                text-shadow: 0 0 8px rgba(100, 140, 180, 0.4);
-                transform: scale(1.1);
+                background: rgba(255, 255, 255, 0.15);
+                box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3), 0 4px 12px rgba(255, 255, 255, 0.05);
+                transform: scale(1.08) translateY(-2px);
                 position: relative;
                 z-index: 1;
             }
-            .pip-progress-wrap { padding: 0 16px 4px; }
+            
+            .pip-bottom {
+                background: linear-gradient(180deg, rgba(10,12,18,0) 0%, rgba(10,12,18,0.8) 100%);
+                padding-top: 8px;
+            }
+            
+            .pip-progress-wrap { padding: 0 16px 2px; }
             .pip-track {
-                width: 100%; height: 3px; border-radius: 99px;
+                width: 100%; height: 4px; border-radius: 99px;
                 background: rgba(255,255,255,0.1); cursor: pointer; position: relative;
                 transition: height 0.15s;
             }
-            .pip-track:hover { height: 5px; }
+            .pip-track:hover { height: 6px; }
             .pip-fill {
                 height: 100%; border-radius: 99px;
-                background: hsl(210 35% 55%);
+                background: hsl(0 0% 100%);
                 pointer-events: none;
-                box-shadow: 0 0 12px rgba(100, 140, 180, 0.5);
+                box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
             }
-            .pip-times { display: flex; justify-content: space-between; margin-top: 3px; }
-            .pip-times span { font-size: 10px; color: #475569; font-variant-numeric: tabular-nums; }
+            .pip-times { display: flex; justify-content: space-between; margin-top: 4px; }
+            .pip-times span { font-size: 9px; font-weight: 600; color: #64748b; font-variant-numeric: tabular-nums; }
+            
             .pip-controls {
-                padding: 6px 16px 14px;
-                display: flex; align-items: center; justify-content: center; gap: 8px;
+                padding: 4px 16px 12px;
+                display: flex; align-items: center; justify-content: center; gap: 12px;
             }
             .pip-btn {
-                width: 36px; height: 36px; border-radius: 50%;
+                width: 32px; height: 32px; border-radius: 50%;
                 background: transparent; border: none; cursor: pointer;
                 color: #94a3b8; display: flex; align-items: center; justify-content: center;
-                transition: color 0.15s, background 0.15s, transform 0.1s;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             }
             .pip-btn:hover { color: #f1f5f9; background: rgba(255,255,255,0.08); }
             .pip-btn:active { transform: scale(0.9); }
             .pip-btn-play {
-                width: 52px; height: 52px;
-                background: hsl(210 35% 55%);
-                color: #ffffff;
-                box-shadow: 0 8px 24px rgba(100, 140, 180, 0.4);
+                width: 44px; height: 44px;
+                background: hsl(0 0% 100%);
+                color: hsl(0 0% 10%);
+                box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.8);
             }
-            .pip-btn-play:hover { background: hsl(210 35% 62%); color: #ffffff; transform: scale(1.05); }
+            .pip-btn-play:hover { background: hsl(0 0% 90%); color: hsl(0 0% 10%); transform: scale(1.05); }
             .pip-btn-play:active { transform: scale(0.95); }
             .pip-spinner {
-                width: 20px; height: 20px;
+                width: 18px; height: 18px;
                 border: 2px solid rgba(255,255,255,0.3);
                 border-top-color: #ffffff;
                 border-radius: 50%;
@@ -185,50 +197,52 @@ export function usePipPlayer() {
         doc.head.appendChild(baseStyle);
     }, []);
 
-    // Build the full HTML structure of the PiP player
     const buildDOM = useCallback((doc: Document) => {
         const root = doc.createElement("div");
         root.className = "pip-root";
         root.innerHTML = `
             <div class="pip-top">
                 <div class="pip-meta">
-                    <div class="pip-icon" id="pip-surah-id">—</div>
                     <div class="pip-titles">
                         <div class="pip-surah" id="pip-surah-name">Loading...</div>
                         <div class="pip-verse" id="pip-verse-num">—</div>
                     </div>
                 </div>
             </div>
-            <div class="pip-arabic" id="pip-arabic"></div>
-            <div class="pip-progress-wrap">
-                <div class="pip-track" id="pip-track">
-                    <div class="pip-fill" id="pip-fill" style="width:0%"></div>
-                </div>
-                <div class="pip-times">
-                    <span id="pip-time-cur">0:00</span>
-                    <span id="pip-time-dur">0:00</span>
-                </div>
+            <div class="pip-content-area">
+                <div class="pip-arabic" id="pip-arabic"></div>
             </div>
-            <div class="pip-controls">
-                <button class="pip-btn" id="pip-prev-btn" title="Previous ayah">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/>
-                    </svg>
-                </button>
-                <button class="pip-btn pip-btn-play" id="pip-play-btn" title="Play / Pause">
-                    <svg id="pip-icon-play" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                        <polygon points="5 3 19 12 5 21 5 3"/>
-                    </svg>
-                    <svg id="pip-icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="display:none">
-                        <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
-                    </svg>
-                    <div class="pip-spinner" id="pip-spinner" style="display:none"></div>
-                </button>
-                <button class="pip-btn" id="pip-next-btn" title="Next ayah">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
-                    </svg>
-                </button>
+            <div class="pip-bottom">
+                <div class="pip-progress-wrap">
+                    <div class="pip-track" id="pip-track">
+                        <div class="pip-fill" id="pip-fill" style="width:0%"></div>
+                    </div>
+                    <div class="pip-times">
+                        <span id="pip-time-cur">0:00</span>
+                        <span id="pip-time-dur">0:00</span>
+                    </div>
+                </div>
+                <div class="pip-controls">
+                    <button class="pip-btn" id="pip-prev-btn" title="Previous ayah">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                            <polygon points="19 20 9 12 19 4 19 20"/><rect x="5" y="4" width="3" height="16"/>
+                        </svg>
+                    </button>
+                    <button class="pip-btn pip-btn-play" id="pip-play-btn" title="Play / Pause">
+                        <svg id="pip-icon-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="margin-left: 2px;">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        <svg id="pip-icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="display:none">
+                            <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                        </svg>
+                        <div class="pip-spinner" id="pip-spinner" style="display:none"></div>
+                    </button>
+                    <button class="pip-btn" id="pip-next-btn" title="Next ayah">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                            <polygon points="5 4 15 12 5 20 5 4"/><rect x="16" y="4" width="3" height="16"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         `;
         doc.body.appendChild(root);
@@ -246,7 +260,7 @@ export function usePipPlayer() {
             track.addEventListener("click", (e) => {
                 const rect = track.getBoundingClientRect();
                 const ratio = (e.clientX - rect.left) / rect.width;
-                if (durationRef.current > 0) seekRef.current(ratio * durationRef.current);
+                if (surahDurationRef.current > 0) seekSurahRef.current(ratio * surahDurationRef.current);
             });
         }
     }, []);
@@ -256,7 +270,6 @@ export function usePipPlayer() {
         const tick = () => {
             if (!isOpenRef.current) return;
 
-            const surahId = doc.getElementById("pip-surah-id");
             const surahName = doc.getElementById("pip-surah-name");
             const verseNum = doc.getElementById("pip-verse-num");
             const arabicEl = doc.getElementById("pip-arabic");
@@ -269,13 +282,12 @@ export function usePipPlayer() {
 
             // These are closures over React state — they read the latest values
             // because we cancel & restart the loop on context changes.
-            if (surahId) surahId.textContent = currentSurah?.id?.toString() ?? "—";
             if (surahName) surahName.textContent = currentSurah?.name_simple ?? "—";
             if (verseNum) {
                 const v = currentVerseKey?.split(":")?.[1];
-                const t = currentSurah?.translated_name?.name ?? "";
-                verseNum.textContent = v ? `Verse ${v} • ${t}` : "—";
+                verseNum.textContent = v ? v : "—";
             }
+
             if (arabicEl) {
                 const words = currentVerse?.words?.filter(w => w.char_type_name !== "end") || [];
                 const currentVerseKeyStr = currentVerseKey ?? "";
@@ -323,10 +335,10 @@ export function usePipPlayer() {
                     });
                 }
             }
-            const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+            const progress = surahDuration > 0 ? (surahCurrentTime / surahDuration) * 100 : 0;
             if (fill) fill.style.width = `${progress}%`;
-            if (timeCur) timeCur.textContent = fmt(currentTime);
-            if (timeDur) timeDur.textContent = fmt(duration);
+            if (timeCur) timeCur.textContent = fmt(surahCurrentTime);
+            if (timeDur) timeDur.textContent = fmt(surahDuration);
 
             if (isLoading) {
                 if (iconPlay) iconPlay.style.display = "none";
@@ -345,7 +357,7 @@ export function usePipPlayer() {
             rafRef.current = requestAnimationFrame(tick);
         };
         rafRef.current = requestAnimationFrame(tick);
-    }, [currentSurah, currentVerseKey, currentVerse, currentWordPosition, currentTime, duration, isPlaying, isLoading]);
+    }, [currentSurah, currentVerseKey, currentVerse, currentWordPosition, surahCurrentTime, surahDuration, isPlaying, isLoading]);
 
     // Stop the RAF loop & close window
     const closePip = useCallback(() => {
@@ -399,7 +411,7 @@ export function usePipPlayer() {
         if (!isOpenRef.current || !pipWindowRef.current) return;
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
         startUpdateLoop(pipWindowRef.current.document);
-    }, [currentSurah, currentVerseKey, currentVerse, currentWordPosition, currentTime, duration, isPlaying, isLoading, startUpdateLoop]);
+    }, [currentSurah, currentVerseKey, currentVerse, currentWordPosition, surahCurrentTime, surahDuration, isPlaying, isLoading, startUpdateLoop]);
 
     // Cleanup on unmount
     useEffect(() => {

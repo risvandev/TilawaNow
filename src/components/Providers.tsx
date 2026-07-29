@@ -17,7 +17,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { PWAProvider } from "@/contexts/PWAContext";
 import { AICompanionProvider } from "@/contexts/AICompanionContext";
 import { useEffect, useState } from "react";
-import { ReactLenis } from 'lenis/react';
 import NextTopLoader from 'nextjs-toploader';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -53,7 +52,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <ReactLenis root>
+    <>
       <NextTopLoader 
         color="hsl(var(--primary))"
         initialPosition={0.08}
@@ -95,6 +94,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
           </PWAProvider>
         </ThemeProvider>
       </QueryClientProvider>
-    </ReactLenis>
+    </>
   );
 }

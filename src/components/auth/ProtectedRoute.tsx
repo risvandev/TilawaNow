@@ -13,7 +13,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         if (!user) {
             // Save the attempted url to localstorage since we can't pass state
             localStorage.setItem("redirectAfterLogin", pathname);
-            router.push("/login");
+            router.push("/account");
         }
     }, [user, pathname, router]);
 

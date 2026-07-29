@@ -51,6 +51,10 @@ interface AudioPlayerContextType {
     setVolume: (v: number) => void;
     isFocusMode: boolean;
     setFocusMode: (open: boolean) => void;
+    surahCurrentTime: number;
+    surahDuration: number;
+    seekSurah: (time: number) => void;
+    unlockAudio: () => void;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
@@ -80,6 +84,9 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const [playbackRate, setPlaybackRateState] = useState(1);
     const [loopMode, setLoopMode] = useState<'NONE' | 'SURAH' | 'AYAH'>('NONE');
     const [volume, setVolumeState] = useState(1.0);
+    const verseDurationsRef = useRef<Record<string, number>>({});
+    const [surahCurrentTime, setSurahCurrentTime] = useState(0);
+    const [surahDuration, setSurahDuration] = useState(0);
 
     // Dual-Buffer Audio Strategy for Industry-Level Gapless Playback
     const primaryAudio = useRef<HTMLAudioElement | null>(null);
@@ -129,15 +136,29 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const getInactiveAudio = () => activeBuffer.current === 'PRIMARY' ? secondaryAudio.current : primaryAudio.current;
 
     // Helper for safe audio playback to prevent unhandled AbortError in console
-    const safePlay = useCallback(async (audioEl: HTMLAudioElement | null) => {
-        if (!audioEl) return;
+    const safePlay = useCallback(async (audioEl: HTMLAudioElement | null): Promise<boolean> => {
+        if (!audioEl) return false;
         try {
             await audioEl.play();
+            return true;
         } catch (err: any) {
             // AbortError is expected when playback is quickly interrupted — ignore it
             if (err?.name !== 'AbortError') {
                 console.error("Playback failed", err);
             }
+            return false;
+        }
+    }, []);
+
+    // Unlock audio elements during a user interaction to allow future programmatic playback
+    const unlockAudio = useCallback(() => {
+        const p = primaryAudio.current;
+        const s = secondaryAudio.current;
+        if (p) {
+            p.play().then(() => p.pause()).catch(() => {});
+        }
+        if (s) {
+            s.play().then(() => s.pause()).catch(() => {});
         }
     }, []);
 
@@ -217,8 +238,29 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 }
             };
         } catch { /* BroadcastChannel not supported */ }
-        return () => broadcastRef.current?.close();
+
+        // Local window listener to pause audio instantly from outside the context (e.g., when clicking a word)
+        const handleGlobalPause = () => {
+            const audio = getActiveAudio();
+            if (audio && !audio.paused) {
+                audio.pause();
+                setIsPlaying(false);
+            }
+        };
+        window.addEventListener('pause-global-audio', handleGlobalPause);
+
+        return () => {
+            broadcastRef.current?.close();
+            window.removeEventListener('pause-global-audio', handleGlobalPause);
+        };
     }, []);
+
+    // Sync isPlaying to a global window variable to allow non-reactive checks
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            (window as any).isQuranPlaying = isPlaying;
+        }
+    }, [isPlaying]);
 
     const broadcast = useCallback((type: string, payload: any = {}) => {
         try {
@@ -288,20 +330,24 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
         const fullUrl = url.startsWith('http') ? url : `https://verses.quran.com/${url}`;
         
-        // 1. FAST-PATH: Check if ACTIVE buffer already has this track pre-warmed
         if (audio.src === fullUrl && audio.readyState >= 2) {
             console.log(`[AudioEngine] Active Buffer Match for ${verse.verse_key}`);
             setCurrentVerseKey(verse.verse_key);
             setCurrentWordPosition(-1);
             audio.playbackRate = playbackRate;
-            await safePlay(audio);
-            setIsPlaying(true);
-            setIsLoading(false);
-            
-            // Preload next into inactive
-            const currentIdx = playlist.findIndex(v => v.verse_key === verse.verse_key);
-            if (currentIdx >= 0 && currentIdx < playlist.length - 1) {
-                prefetchNext(currentIdx + 1);
+            const success = await safePlay(audio);
+            if (success) {
+                setIsPlaying(true);
+                setIsLoading(false);
+                
+                // Preload next into inactive
+                const currentIdx = playlist.findIndex(v => v.verse_key === verse.verse_key);
+                if (currentIdx >= 0 && currentIdx < playlist.length - 1) {
+                    prefetchNext(currentIdx + 1);
+                }
+            } else {
+                setIsLoading(false);
+                setIsPlaying(false);
             }
             return;
         }
@@ -323,15 +369,20 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
             const newActive = getActiveAudio();
             if (newActive) {
                 newActive.playbackRate = playbackRate;
-                await safePlay(newActive);
-                setIsPlaying(true);
-                setIsLoading(false);
-                broadcast('PLAY', { surah: currentSurah, verseKey: verse.verse_key });
-                
-                // Preload next
-                const nextIdx = playlist.findIndex(v => v.verse_key === verse.verse_key) + 1;
-                if (nextIdx > 0 && nextIdx < playlist.length) {
-                    prefetchNext(nextIdx);
+                const success = await safePlay(newActive);
+                if (success) {
+                    setIsPlaying(true);
+                    setIsLoading(false);
+                    broadcast('PLAY', { surah: currentSurah, verseKey: verse.verse_key });
+                    
+                    // Preload next
+                    const nextIdx = playlist.findIndex(v => v.verse_key === verse.verse_key) + 1;
+                    if (nextIdx > 0 && nextIdx < playlist.length) {
+                        prefetchNext(nextIdx);
+                    }
+                } else {
+                    setIsLoading(false);
+                    setIsPlaying(false);
                 }
                 return;
             }
@@ -372,17 +423,46 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
             }
         }
 
-        await safePlay(audio);
-        setIsPlaying(true);
-        setIsLoading(false);
-        broadcast('PLAY', { surah: currentSurah, verseKey: verse.verse_key });
+        const success = await safePlay(audio);
+        if (success) {
+            setIsPlaying(true);
+            setIsLoading(false);
+            broadcast('PLAY', { surah: currentSurah, verseKey: verse.verse_key });
 
-        // Eagerly preload the next ayah into the inactive buffer while this one plays
-        const nextIdx = playlist.findIndex(v => v.verse_key === verse.verse_key) + 1;
-        if (nextIdx > 0 && nextIdx < playlist.length) {
-            prefetchNext(nextIdx);
+            // Eagerly preload the next ayah into the inactive buffer while this one plays
+            const nextIdx = playlist.findIndex(v => v.verse_key === verse.verse_key) + 1;
+            if (nextIdx > 0 && nextIdx < playlist.length) {
+                prefetchNext(nextIdx);
+            }
+        } else {
+            setIsLoading(false);
+            setIsPlaying(false);
         }
     }, [playbackRate, playlist, prefetchNext, broadcast, currentSurah]);
+
+    const seekSurah = useCallback((surahTime: number) => {
+        if (!playlist.length) return;
+        let elapsed = 0;
+        for (let i = 0; i < playlist.length; i++) {
+            const v = playlist[i];
+            const m = verseDurationsRef.current[v.verse_key];
+            const segs = v.audio?.segments;
+            const d = (m && m > 0) ? m : (segs && segs.length > 0) ? segs[segs.length - 1][3] / 1000 : 30;
+            if (elapsed + d >= surahTime || i === playlist.length - 1) {
+                const withinVerse = Math.max(0, surahTime - elapsed);
+                if (i !== currentIndex) {
+                    transitionRef.current = null;
+                    setCurrentIndex(i);
+                    setCurrentVerseKey(v.verse_key);
+                    playWithBuffer(v, withinVerse);
+                } else {
+                    seek(withinVerse);
+                }
+                break;
+            }
+            elapsed += d;
+        }
+    }, [playlist, currentIndex, playWithBuffer, seek]);
 
     const playNext = useCallback((isProactive = false) => {
         if (isTransitioning.current) return;
@@ -497,6 +577,32 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 setCurrentTime(audio.currentTime);
                 if (audio.duration && isFinite(audio.duration)) {
                     setDuration(audio.duration);
+
+                    // Store actual measured duration for this verse
+                    const cv = playlist[currentIndex];
+                    if (cv) verseDurationsRef.current[cv.verse_key] = audio.duration;
+
+                    // Helper: best estimate of a verse's duration
+                    const getEstDur = (v: Verse): number => {
+                        const m = verseDurationsRef.current[v.verse_key];
+                        if (m && m > 0) return m;
+                        const segs = v.audio?.segments;
+                        if (segs && segs.length > 0) return segs[segs.length - 1][3] / 1000;
+                        const vals = Object.values(verseDurationsRef.current).filter(d => d > 0);
+                        return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 30;
+                    };
+
+                    // Compute surah-wide current position and total duration
+                    let offset = 0;
+                    for (let i = 0; i < currentIndex; i++) {
+                        if (playlist[i]) offset += getEstDur(playlist[i]);
+                    }
+                    let total = offset + audio.duration;
+                    for (let i = currentIndex + 1; i < playlist.length; i++) {
+                        if (playlist[i]) total += getEstDur(playlist[i]);
+                    }
+                    setSurahCurrentTime(offset + audio.currentTime);
+                    setSurahDuration(total);
                 }
             }
 
@@ -603,10 +709,47 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }, []);
 
     const playSurah = useCallback((surah: Surah, verses: Verse[], startVerseKey?: string) => {
-        setPlaylist(verses);
+        let finalVerses = [...verses];
+        
+        // Inject Bismillah for Surahs that start with it (excluding Al-Fatihah since it's already Verse 1, and At-Tawbah which doesn't have it)
+        if (surah.bismillah_pre && surah.id !== 1 && surah.id !== 9) {
+            let bismillahUrl = "Alafasy/mp3/001001.mp3";
+            if (verses[0]?.audio?.url) {
+                const parts = verses[0].audio.url.split('/');
+                parts[parts.length - 1] = "001001.mp3";
+                bismillahUrl = parts.join('/');
+            }
+
+            const bismillahVerse: Verse = {
+                id: 0,
+                verse_number: 0,
+                verse_key: `${surah.id}:0`,
+                hizb_number: verses[0]?.hizb_number || 0,
+                rub_el_hizb_number: verses[0]?.rub_el_hizb_number || 0,
+                ruku_number: verses[0]?.ruku_number || 0,
+                manzil_number: verses[0]?.manzil_number || 0,
+                sajdah_number: null,
+                text_uthmani: "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ",
+                page_number: verses[0]?.page_number || 0,
+                juz_number: verses[0]?.juz_number || 0,
+                audio: {
+                    url: bismillahUrl,
+                    segments: []
+                }
+            };
+            
+            if (finalVerses[0]?.verse_key !== `${surah.id}:0`) {
+                finalVerses.unshift(bismillahVerse);
+            }
+        }
+
+        verseDurationsRef.current = {};
+        setSurahCurrentTime(0);
+        setSurahDuration(0);
+        setPlaylist(finalVerses);
         setCurrentSurah(surah);
         setIsContinuous(true);
-        const idx = startVerseKey ? verses.findIndex(v => v.verse_key === startVerseKey) : 0;
+        const idx = startVerseKey ? finalVerses.findIndex(v => v.verse_key === startVerseKey) : 0;
         const startIndex = idx === -1 ? 0 : idx;
         
         // Reset transition tracking for new surah
@@ -615,13 +758,13 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         
         // Clear secondary buffer to prevent legacy audio bleed
         const inactive = getInactiveAudio();
-        if (inactive) { inactive.src = ""; inactive.load(); }
+        if (inactive) { inactive.removeAttribute('src'); }
         
         // Proactively preheat the first verse to eliminate transition lag
-        preheatAudio(verses[startIndex]);
+        preheatAudio(finalVerses[startIndex]);
         
-        playWithBuffer(verses[startIndex]);
-        broadcast('TRACK_CHANGE', { surah, verseKey: verses[startIndex].verse_key });
+        playWithBuffer(finalVerses[startIndex]);
+        broadcast('TRACK_CHANGE', { surah, verseKey: finalVerses[startIndex].verse_key });
     }, [preheatAudio, playWithBuffer, broadcast]);
 
     const playVerse = useCallback((verse: Verse, surah: Surah) => {
@@ -678,6 +821,9 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setPlaylist([]);
         setCurrentTime(0);
         setDuration(0);
+        setSurahCurrentTime(0);
+        setSurahDuration(0);
+        verseDurationsRef.current = {};
         setFullPlayerOpen(false);
         transitionRef.current = null;
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -692,7 +838,8 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
             isPlayerVisible, isFullPlayerOpen, setFullPlayerOpen,
             playSurah, playVerse, togglePlay, playNext, playPrev, closePlayer, seek, jumpToIndex,
             setOnPlaylistEnd, playbackRate, setPlaybackRate, loopMode, setLoopMode, preheatAudio,
-            volume, setVolume, isFocusMode, setFocusMode
+            volume, setVolume, isFocusMode, setFocusMode,
+            surahCurrentTime, surahDuration, seekSurah, unlockAudio
         }}>
             {children}
         </AudioPlayerContext.Provider>

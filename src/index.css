@@ -11,103 +11,111 @@
 
 @layer base {
   :root {
-    /* Core backgrounds - Deep charcoal tones */
-    --background: 230 15% 8%;
-    --foreground: 210 20% 95%;
+    /* Core backgrounds - ChatGPT Premium Gray style */
+    --background: 0 0% 9%;
+    /* Deep charcoal/almost black #171717 */
+    --foreground: 0 0% 100%;
+    /* Pure White #ffffff */
 
     /* Card surfaces - Slightly elevated */
-    --card: 230 12% 11%;
-    --card-foreground: 210 20% 95%;
+    --card: 0 0% 13%;
+    /* Surface elevated #212121 */
+    --card-foreground: 0 0% 100%;
 
     /* Popover surfaces */
-    --popover: 230 12% 11%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 0 0% 13%;
+    --popover-foreground: 0 0% 100%;
 
-    /* Primary - Soft steel blue */
-    --primary: 210 35% 55%;
-    --primary-foreground: 230 15% 8%;
+    /* Primary - Pure white for buttons and main elements */
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 10%;
 
     /* Secondary - Muted dark surface */
-    --secondary: 230 12% 15%;
-    --secondary-foreground: 210 20% 85%;
+    --secondary: 0 0% 17%;
+    --secondary-foreground: 0 0% 90%;
 
     /* Muted - Subdued elements */
-    --muted: 230 10% 18%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
 
-    /* Accent - Teal for Arabic text */
-    --accent: 175 30% 60%;
-    --accent-foreground: 230 15% 8%;
+    /* Accent - Pure white */
+    --accent: 0 0% 100%;
+    --accent-foreground: 0 0% 10%;
+
+    /* Premium Accent (Sage Green) - Luxurious accent for names and highlights */
+    --premium-accent: 145 25% 50%;
+    /* #609F7A ish */
+    --premium-accent-foreground: 0 0% 10%;
 
     /* Destructive */
     --destructive: 0 65% 50%;
-    --destructive-foreground: 210 20% 95%;
+    --destructive-foreground: 0 0% 100%;
 
     /* Borders and inputs */
-    --border: 230 10% 20%;
-    --input: 230 10% 20%;
-    --ring: 210 35% 55%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 100%;
 
     --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 230 15% 6%;
-    --sidebar-foreground: 210 20% 85%;
-    --sidebar-primary: 210 35% 55%;
-    --sidebar-primary-foreground: 230 15% 8%;
-    --sidebar-accent: 230 12% 12%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 230 10% 15%;
-    --sidebar-ring: 210 35% 55%;
+    --sidebar-background: 0 0% 9%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 0% 100%;
 
     /* Fonts */
     --font-quran: 'Amiri', serif;
-    /* Default Quran Font */
 
     /* Custom semantic tokens */
-    --surface-elevated: 230 12% 13%;
-    --surface-glass: 230 15% 10%;
-    --text-arabic: 175 35% 65%;
-    --text-highlight: 210 35% 65%;
-    --gradient-accent: linear-gradient(135deg, hsl(210 35% 55%), hsl(175 30% 55%));
-    --gradient-surface: linear-gradient(180deg, hsl(230 15% 10%), hsl(230 15% 6%));
-    --shadow-glow: 0 0 40px hsl(210 35% 55% / 0.15);
-    --shadow-soft: 0 4px 24px hsl(0 0% 0% / 0.3);
+    --surface-elevated: 0 0% 15%;
+    --surface-glass: 0 0% 11%;
+    --text-arabic: 0 0% 100%;
+    --text-highlight: 0 0% 100%;
+    --gradient-accent: linear-gradient(135deg, hsl(0 0% 100%), hsl(0 0% 70%));
+    --gradient-surface: linear-gradient(180deg, hsl(0 0% 13%), hsl(0 0% 9%));
+    --shadow-glow: 0 0 40px hsl(0 0% 100% / 0.08);
+    --shadow-soft: 0 4px 24px hsl(0 0% 0% / 0.4);
 
-    /* CTA Blue banner */
-    --cta-background: 210 35% 55%;
-    --cta-foreground: 230 20% 15%;
+    /* CTA banner */
+    --cta-background: 150 15% 15%;
+    /* Grey-green */
+    --cta-foreground: 150 30% 95%;
   }
 
   .dark {
     /* Same as root since we're dark-first */
-    --background: 230 15% 8%;
-    --foreground: 210 20% 95%;
-    --card: 230 12% 11%;
-    --card-foreground: 210 20% 95%;
-    --popover: 230 12% 11%;
-    --popover-foreground: 210 20% 95%;
-    --primary: 210 35% 55%;
-    --primary-foreground: 230 15% 8%;
-    --secondary: 230 12% 15%;
-    --secondary-foreground: 210 20% 85%;
-    --muted: 230 10% 18%;
-    --muted-foreground: 215 15% 55%;
-    --accent: 175 30% 60%;
-    --accent-foreground: 230 15% 8%;
+    --background: 0 0% 9%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 13%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 13%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 10%;
+    --secondary: 0 0% 17%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 100%;
+    --accent-foreground: 0 0% 10%;
     --destructive: 0 65% 50%;
-    --destructive-foreground: 210 20% 95%;
-    --border: 230 10% 20%;
-    --input: 230 10% 20%;
-    --ring: 210 35% 55%;
-    --sidebar-background: 230 15% 6%;
-    --sidebar-foreground: 210 20% 85%;
-    --sidebar-primary: 210 35% 55%;
-    --sidebar-primary-foreground: 230 15% 8%;
-    --sidebar-accent: 230 12% 12%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 230 10% 15%;
-    --sidebar-ring: 210 35% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 100%;
+    --sidebar-background: 0 0% 9%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 0% 100%;
   }
 
   /* Light mode overrides */
@@ -143,8 +151,51 @@
     --surface-glass: 210 20% 98%;
     --text-arabic: 175 45% 35%;
     --text-highlight: 210 45% 45%;
-    --cta-background: 210 35% 55%;
-    --cta-foreground: 0 0% 100%;
+    --cta-background: 150 25% 90%;
+    --cta-foreground: 150 40% 20%;
+  }
+
+  /* Premium Gray Theme Scoped Override (ChatGPT Style) */
+  .theme-premium-gray {
+    --background: 0 0% 9%;
+    /* Deep charcoal/almost black #171717 */
+    --foreground: 0 0% 100%;
+    /* Pure White #ffffff */
+    --card: 0 0% 13%;
+    /* Surface elevated #212121 */
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 13%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    /* Pure white buttons */
+    --primary-foreground: 0 0% 10%;
+    --secondary: 0 0% 17%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 100%;
+    --accent-foreground: 0 0% 10%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 100%;
+    --sidebar-background: 0 0% 9%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 0% 100%;
+    --surface-elevated: 0 0% 15%;
+    --surface-glass: 0 0% 11%;
+    --text-arabic: 0 0% 100%;
+    --text-highlight: 0 0% 100%;
+    --gradient-accent: linear-gradient(135deg, hsl(0 0% 100%), hsl(0 0% 70%));
+    --gradient-surface: linear-gradient(180deg, hsl(0 0% 13%), hsl(0 0% 9%));
+    --shadow-glow: 0 0 40px hsl(0 0% 100% / 0.08);
+    --shadow-soft: 0 4px 24px hsl(0 0% 0% / 0.4);
+    --cta-background: 150 15% 15%;
+    --cta-foreground: 150 30% 95%;
   }
 }
 
@@ -163,6 +214,11 @@
     font-family: 'Inter', system-ui, sans-serif;
     overflow-x: hidden;
     width: 100%;
+  }
+
+  /* Force lock HTML when Radix UI locks the body */
+  html:has(body[data-scroll-locked]) {
+    overflow: hidden !important;
   }
 
   /* Arabic text styling */
@@ -396,16 +452,18 @@
 
   .virtual-row {
     content-visibility: auto;
-    contain-intrinsic-size: 1px 400px; /* Estimated height for ayahs */
+    contain-intrinsic-size: 1px 400px;
+    /* Estimated height for ayahs */
   }
 
   .word-highlight {
-    color: hsl(var(--primary)) !important;
-    text-shadow: 0 0 15px hsl(var(--primary) / 0.4);
+    color: hsl(157, 46%, 71%) !important;
+    text-shadow: 0 0 16px rgba(74, 222, 128, 0.45);
     position: relative;
     z-index: 10;
-    transition: color 0.2s ease-out;
-    display: inline;
+    transition: all 0.2s ease-out;
+    display: inline-block;
+    transform: scale(1.1);
   }
 
   /* Premium Markdown Rendering Styling (Gemini/ChatGPT Style) */
@@ -413,15 +471,23 @@
     @apply leading-relaxed text-foreground/90;
   }
 
-  .markdown-content h1, 
-  .markdown-content h2, 
+  .markdown-content h1,
+  .markdown-content h2,
   .markdown-content h3 {
     @apply font-bold text-foreground mb-4 mt-6 first:mt-0 tracking-tight;
   }
 
-  .markdown-content h1 { @apply text-2xl md:text-3xl; }
-  .markdown-content h2 { @apply text-xl md:text-2xl; }
-  .markdown-content h3 { @apply text-lg md:text-xl; }
+  .markdown-content h1 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  .markdown-content h2 {
+    @apply text-xl md:text-2xl;
+  }
+
+  .markdown-content h3 {
+    @apply text-lg md:text-xl;
+  }
 
   .markdown-content p {
     @apply mb-4 last:mb-0 leading-7;
@@ -431,7 +497,7 @@
     @apply font-bold text-foreground;
   }
 
-  .markdown-content ul, 
+  .markdown-content ul,
   .markdown-content ol {
     @apply mb-4 pl-5 space-y-2;
   }
@@ -621,7 +687,7 @@ body.night-mode::after {
   backdrop-filter: blur(24px) saturate(1.2);
   -webkit-backdrop-filter: blur(24px) saturate(1.2);
   border: 1px solid hsl(var(--border) / 0.4);
-  box-shadow: 
+  box-shadow:
     0 -4px 32px hsl(0 0% 0% / 0.3),
     0 0 0 1px hsl(var(--border) / 0.1),
     inset 0 1px 0 hsl(0 0% 100% / 0.04);
@@ -629,45 +695,60 @@ body.night-mode::after {
 
 .light .player-glass {
   background: hsl(var(--background) / 0.95);
-  box-shadow: 
+  box-shadow:
     0 -4px 32px hsl(0 0% 0% / 0.1),
     0 0 0 1px hsl(var(--border) / 0.2),
     inset 0 1px 0 hsl(0 0% 100% / 0.6);
 }
 
 /* Progress bar track/thumb styling */
-.player-progress [data-orientation="horizontal"] > span:first-child {
+.player-progress [data-orientation="horizontal"]>span:first-child {
   background: hsl(var(--muted));
   border-radius: 999px;
   overflow: hidden;
 }
-.player-progress [data-orientation="horizontal"] > span:first-child > span {
+
+.player-progress [data-orientation="horizontal"]>span:first-child>span {
   background: hsl(var(--primary));
   border-radius: 999px;
 }
 
 /* Full player overlay gradient */
 .full-player-surface {
-  background: linear-gradient(
-    180deg,
-    hsl(var(--background) / 0.98) 0%,
-    hsl(var(--background)) 100%
-  );
+  background: linear-gradient(180deg,
+      hsl(var(--background) / 0.98) 0%,
+      hsl(var(--background)) 100%);
 }
 
 /* Player enter/exit animations */
 @keyframes player-slide-up {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
+
 @keyframes player-slide-down {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(100%); opacity: 0; }
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
 }
 
 .animate-player-in {
   animation: player-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
 .animate-player-out {
   animation: player-slide-down 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
 }
@@ -677,13 +758,60 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   filter: invert(44%) sepia(87%) saturate(2252%) hue-rotate(172deg) brightness(91%) contrast(101%);
   cursor: pointer;
 }
+
 /* scrollbar-none utility */
 @layer utilities {
   .scrollbar-none {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* ── Tajweed Color Rules (Quran.com Standard) ── */
+.ham_wasl,
+.slnt,
+.laam_shamsiyah {
+  color: #aaaaaa;
+}
+
+.madd_2,
+.madd_246 {
+  color: #40C4FF;
+}
+
+.madd_4,
+.madd_45 {
+  color: #0000FF;
+}
+
+.madd_6 {
+  color: #000080;
+}
+
+.ghunnah,
+.idgham_ghunnah {
+  color: #32CD32;
+}
+
+.idgham_wo_ghunnah,
+.idgham_mutajanisayn,
+.idgham_mutaqaribayn {
+  color: #A0D468;
+}
+
+.ikhfa,
+.ikhfa_shafawi {
+  color: #FF4500;
+}
+
+.iqlab {
+  color: #FF1493;
+}
+
+.qalqalah {
+  color: #800080;
 }

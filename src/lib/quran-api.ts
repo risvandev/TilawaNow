@@ -22,6 +22,8 @@ export interface Word {
   position: number;
   audio_url: string | null;
   char_type_name: string;
+  line_number: number;
+  page_number: number;
   text_uthmani: string;
   text_imlaei?: string;
   translation?: {
@@ -113,20 +115,56 @@ export const fetchSurahInfo = async (surahNumber: number): Promise<any | null> =
   }
 };
 
+// Curated list of popular translations available in Quran.com API v4
+export const AVAILABLE_TRANSLATIONS = [
+  { id: 131, name: "The Clear Quran (Mustafa Khattab)", language: "English" },
+  { id: 20, name: "Saheeh International", language: "English" },
+  { id: 85, name: "Abdul Haleem", language: "English" },
+  { id: 97, name: "Tahir ul Qadri", language: "Urdu" },
+  { id: 31, name: "Muhammad Hamidullah", language: "French" },
+  { id: 33, name: "Indonesian Islamic affairs ministry", language: "Indonesian" },
+  { id: 83, name: "Muhammad Isa García", language: "Spanish" },
+  { id: 77, name: "Turkish (Diyanet İşleri)", language: "Turkish" },
+  { id: 13, name: "Russian (Abu Adel)", language: "Russian" },
+  { id: 111, name: "Hindi (Muhammad Farooq Khan)", language: "Hindi" },
+];
+
+// Curated list of popular Word-by-Word languages
+export const AVAILABLE_WBW_LANGUAGES = [
+  { code: "en", name: "English" },
+  { code: "ur", name: "Urdu" },
+  { code: "id", name: "Indonesian" },
+  { code: "hi", name: "Hindi" },
+  { code: "bn", name: "Bengali" },
+  { code: "tr", name: "Turkish" },
+  { code: "ru", name: "Russian" },
+  { code: "fr", name: "French" },
+  { code: "de", name: "German" },
+  { code: "fa", name: "Persian" },
+  { code: "zh", name: "Chinese" },
+  { code: "ta", name: "Tamil" },
+];
+
 // Fetch verses of a surah with translations and word data
 export const fetchVerses = async (
   surahNumber: number,
   translationId: number = 20,
   page: number = 1,
   perPage: number = 50,
-  script: string = "text_uthmani" // 'text_uthmani' | 'text_indopak' | 'text_imlaei'
+  script: string = "text_uthmani", // 'text_uthmani' | 'text_indopak' | 'text_imlaei' | 'text_uthmani_tajweed'
+  wbwLanguage: string = "en"
 ): Promise<{ verses: Verse[]; pagination: any }> => {
   try {
     // Fetch verses with word-by-word translation and verse translations
     // Ensure we request the specific script field for both words and verses
-    const scriptField = script === "text_indopak" ? "text_indopak" : "text_uthmani";
+    const scriptField = 
+      script === "text_indopak" ? "text_indopak" : 
+      script === "text_uthmani_tajweed" ? "text_uthmani_tajweed" : 
+      script === "text_imlaei" ? "text_imlaei" :
+      "text_uthmani";
+
     const response = await fetch(
-      `${BASE_URL}/verses/by_chapter/${surahNumber}?language=en&words=true&word_fields=${scriptField},audio_url&translations=${translationId}&fields=${scriptField}&per_page=${perPage}&page=${page}`
+      `${BASE_URL}/verses/by_chapter/${surahNumber}?language=${wbwLanguage}&word_translation_language=${wbwLanguage}&words=true&word_fields=${scriptField},audio_url,line_number,page_number&translations=${translationId}&fields=${scriptField}&per_page=${perPage}&page=${page}`
     );
     const data = await response.json();
     return {
@@ -210,14 +248,22 @@ export const fetchChapterVerseAudios = async (
   return audioMap;
 };
 
-// Fetch user's reading profile (last surah/ayah)
+// Fetch user's reading profile (last surah/ayah) from profiles table
 export const fetchUserReadingProfile = async (userId: string) => {
   const { data } = await supabase
-    .from('user_reading_profile')
-    .select('last_read_surah, last_read_ayah, last_read_timestamp')
-    .eq('user_id', userId)
+    .from('profiles')
+    .select('last_read_ayah')
+    .eq('id', userId)
     .single();
-  return data;
+
+  if (data && data.last_read_ayah) {
+    const [surahStr, ayahStr] = data.last_read_ayah.split(':');
+    return {
+      last_read_surah: parseInt(surahStr),
+      last_read_ayah: parseInt(ayahStr)
+    };
+  }
+  return null;
 };
 
 // Fetch chapter audio (full surah)
@@ -298,12 +344,49 @@ export const fetchTafsir = async (
   try {
     const response = await fetch(`${BASE_URL}/tafsirs/${resourceId}/by_ayah/${verseKey}`);
     const data = await response.json();
+    if (!data || !data.tafsir) {
+      return null;
+    }
     return {
       text: data.tafsir.text,
       resource_name: data.tafsir.resource_name
     };
   } catch (error) {
     console.error("Error fetching tafsir:", verseKey, error);
+    return null;
+  }
+};
+
+/**
+ * Fetch overview and metadata for a specific Surah
+ * @param surahId 1-114
+ */
+export const fetchSurahOverview = async (
+  surahId: number
+): Promise<{ name: string; revelation_place: string; verses_count: number; info_text: string } | null> => {
+  try {
+    const [chapterRes, infoRes] = await Promise.all([
+      fetch(`${BASE_URL}/chapters/${surahId}`),
+      fetch(`${BASE_URL}/chapters/${surahId}/info`)
+    ]);
+
+    const chapterData = await chapterRes.json();
+    const infoData = await infoRes.json();
+
+    if (!chapterData?.chapter) return null;
+
+    // The info text often contains HTML (e.g. <p>, <br>). We can strip it basic tags or let the AI summarize it.
+    let cleanText = infoData?.chapter_info?.text || "No detailed info available.";
+    cleanText = cleanText.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for cleaner AI ingestion
+
+    return {
+      name: chapterData.chapter.name_simple,
+      revelation_place: chapterData.chapter.revelation_place,
+      verses_count: chapterData.chapter.verses_count,
+      info_text: cleanText
+    };
+  } catch (error) {
+    console.error("Error fetching surah info:", surahId, error);
     return null;
   }
 };

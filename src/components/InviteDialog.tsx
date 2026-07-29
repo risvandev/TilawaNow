@@ -21,7 +21,7 @@ export function InviteDialog() {
     const [isSending, setIsSending] = useState(false);
     const { user } = useAuth();
     const { toast } = useToast();
-    const inviteLink = typeof window !== "undefined" ? window.location.origin + "/signup" : "https://tilawanow.vercel.app/signup";
+    const inviteLink = typeof window !== "undefined" ? window.location.origin + "/account" : "https://tilawanow.vercel.app/account";
 
     const handleEmailInvite = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,9 +74,8 @@ export function InviteDialog() {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 h-8 px-2 md:h-10 md:px-4 text-xs md:text-sm">
-                    <Share2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                    <span className="md:hidden">Invite</span>
+                <Button variant="outline" size="icon" className="w-10 h-10 md:w-auto md:h-10 md:px-4 rounded-full md:rounded-xl border-white/10 bg-secondary/40 backdrop-blur-xl hover:bg-white/10 hover:border-white/20 transition-all text-xs md:text-sm font-semibold tracking-wide shadow-lg shrink-0 gap-0 md:gap-2">
+                    <Share2 className="w-4 h-4 md:w-4 md:h-4" />
                     <span className="hidden md:inline">Invite Friends</span>
                 </Button>
             </DialogTrigger>

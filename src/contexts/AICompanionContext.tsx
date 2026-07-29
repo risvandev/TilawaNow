@@ -6,9 +6,6 @@ import { useAuth } from "./AuthContext";
 
 interface UserAIMemory {
   lastReadAyah: string | null;
-  frequentTopics: string[];
-  knowledgeLevel: string;
-  strugglePoints: string[];
 }
 
 interface AICompanionContextType {
@@ -40,35 +37,21 @@ export const AICompanionProvider = ({ children }: { children: React.ReactNode })
 
   const [userAIMemory, setUserAIMemory] = useState<UserAIMemory>({
     lastReadAyah: null,
-    frequentTopics: [],
-    knowledgeLevel: "Beginner",
-    strugglePoints: [],
   });
 
   const refreshMemory = useCallback(async () => {
     if (!user) return;
 
     try {
-      // 1. Fetch Profile Data (topics, level, etc.)
+      // 1. Fetch Profile Data (last read ayah)
       const { data: profile } = await supabase
         .from("profiles")
-        .select("last_read_ayah, frequent_topics, ai_knowledge_level")
+        .select("last_read_ayah")
         .eq("id", user.id)
         .single();
 
-      // 2. Fetch Struggle Points (Verses with high difficulty or high struggle count)
-      const { data: struggleData } = await supabase
-        .from("verses_read")
-        .select("verse_key")
-        .eq("user_id", user.id)
-        .or("difficulty_score.gt.3,struggle_count.gt.5")
-        .limit(5);
-
       setUserAIMemory({
         lastReadAyah: profile?.last_read_ayah || null,
-        frequentTopics: profile?.frequent_topics || [],
-        knowledgeLevel: profile?.ai_knowledge_level || "Beginner",
-        strugglePoints: struggleData?.map((v) => v.verse_key) || [],
       });
     } catch (error) {
       console.error("Error refreshing AI memory:", error);

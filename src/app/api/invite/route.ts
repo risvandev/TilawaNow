@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     // Sanitize user inputs
     const safeFromName = escapeHtml(from_name);
     // invite_link is sanitized by construction or validation above, but let's be safe if it's used in text
-    const safeInviteLink = invite_link ? escapeHtml(invite_link) : `https://${siteUrl}/signup`;
+    const safeInviteLink = invite_link ? escapeHtml(invite_link) : `https://${siteUrl}/account`;
 
     // SMTP Configuration from environment variables
     const port = Number(process.env.SMTP_PORT) || 587;

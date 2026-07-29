@@ -5,20 +5,15 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, MessageSquare, CheckCircle, Heart, ChevronLeft, Clock, Sparkles, QrCode } from "lucide-react";
+import { Send, CheckCircle, Heart, ChevronLeft, Sparkles, Mail, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Footer } from "@/components/layout/Footer";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+import { useSmartBack } from "@/hooks/use-smart-back";
+
 
 const Contact = () => {
   const navigate = useRouter();
+  const handleBack = useSmartBack("/home");
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
@@ -29,49 +24,7 @@ const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Feedback Dialog State
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false);
-  const [feedbackText, setFeedbackText] = useState("");
-  const [isDonateOpen, setIsDonateOpen] = useState(false);
-
-  const handleFeedbackSubmit = async () => {
-    if (!feedbackText.trim()) return;
-    setIsFeedbackSubmitting(true);
-
-    try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Anonymous Feedback",
-          email: "tilawanow@gmail.com", // Placeholder for feedback
-          subject: "User Feedback",
-          message: feedbackText,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) throw new Error(result.error || "Failed to send");
-
-      setIsFeedbackOpen(false);
-      setFeedbackText("");
-      toast({
-        title: "Feedback Received",
-        description: "Thank you! Your feedback helps us improve.",
-      });
-    } catch (error: any) {
-      console.error("Feedback error:", error);
-      toast({
-        variant: "destructive",
-        title: "Failed to send",
-        description: error.message || "Please try again later.",
-      });
-    } finally {
-      setIsFeedbackSubmitting(false);
-    }
-  };
+  // Removed Donate Dialog State and Razorpay logic in favor of /donate page
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,47 +68,52 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
-      {/* Decorative Background Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-[600px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute top-1/4 -right-[10%] w-[500px] h-[500px] bg-accent/5 blur-[140px] rounded-full pointer-events-none -z-10" />
+      {/* Decorative Background Glows - Mac Style */}
+      <div className="absolute top-[-10%] left-[5%] w-[50vw] h-[50vh] rounded-full bg-premium-accent/5 blur-[150px] pointer-events-none z-0" />
+      <div className="absolute bottom-[20%] right-[-5%] w-[45vw] h-[45vh] rounded-full bg-blue-500/5 blur-[150px] pointer-events-none z-0" />
 
-      <div className="flex-1 container mx-auto px-4 md:px-6 py-12 md:py-20 relative z-10">
+      <div className="flex-1 container mx-auto px-4 md:px-6 py-10 md:py-16 relative z-10 max-w-6xl">
         {/* Navigation & Header */}
-        <div className="flex flex-col items-center mb-16 animate-fade-in">
+        <div className="flex flex-col items-start mb-12 animate-fade-in">
           <button
-            onClick={() => navigate.back()}
-            className="group self-start inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-10 transition-all duration-300 px-5 py-2 rounded-full hover:bg-secondary/80 border border-transparent hover:border-border/50"
+            onClick={handleBack}
+            className="group inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-all duration-300 px-4 py-1.5 rounded-full bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-white/10"
           >
             <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            <span className="text-sm font-medium">Return to Discovery</span>
+            <span className="text-sm font-medium">Return</span>
           </button>
 
-          <div className="relative mb-8 group">
-            <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
-          </div>
-          <h1 className="text-4xl md:text-7xl font-bold text-foreground mb-4 tracking-tighter text-center">
-            Let's <span className="gradient-text">Contact</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-premium-accent mb-1">
+            Get in touch
+          </span>
+          <h1 className="text-3xl md:text-5xl font-extrabold text-foreground tracking-tight">
+            Contact & Support
           </h1>
+          <p className="text-sm text-muted-foreground/80 mt-1 max-w-xl">
+            Have questions, feedback, or need help? Reach out and connect with our team.
+          </p>
         </div>
 
-        <div className="max-w-xl mx-auto w-full group/container">
-          {/* Main Form Clean Layout */}
-          <div className={cn(
-            "p-0 relative transition-all duration-500",
-            !submitted && "animate-fade-in-up"
-          )}>
-            
+        {/* Main Grid: Bento style */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {/* Column 1 & 2: Contact Form Card */}
+          <div className="lg:col-span-2 bg-white/[0.02] border border-white/5 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-2xl animate-fade-in-up">
+            <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
+              <Mail className="w-5 h-5 text-premium-accent" />
+              Send a Message
+            </h2>
+
             {submitted ? (
-              <div className="text-center py-12 animate-fade-in-up glass-card p-10">
-                <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle className="w-10 h-10 text-green-500" />
+              <div className="text-center py-12 animate-fade-in-up">
+                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle className="w-8 h-8 text-green-500" />
                 </div>
-                <h3 className="text-2xl font-bold text-foreground mb-3">Message Received</h3>
-                <p className="text-muted-foreground mb-8 leading-relaxed">
-                  Thank you for reaching out. We've received your message and will get back to you shortly.
+                <h3 className="text-xl font-bold text-foreground mb-2">Message Received</h3>
+                <p className="text-sm text-muted-foreground mb-8 leading-relaxed max-w-md mx-auto">
+                  Thank you for reaching out! We've received your message and will respond as soon as possible.
                 </p>
-                <div className="flex flex-col gap-3">
-                  <Button variant="outline" size="lg" className="rounded-xl" onClick={() => setSubmitted(false)}>
+                <div className="flex flex-col sm:flex-row justify-center gap-3">
+                  <Button variant="outline" size="lg" className="rounded-xl border-white/10" onClick={() => setSubmitted(false)}>
                     Send Another Message
                   </Button>
                   <Button variant="ghost" size="lg" className="rounded-xl" onClick={() => navigate.back()}>
@@ -164,71 +122,72 @@ const Contact = () => {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="space-y-3 group/field">
-                  <label className="text-sm font-bold text-foreground/70 ml-1 group-focus-within/field:text-primary transition-colors uppercase tracking-wider">Your Name</label>
-                  <Input
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Enter your name"
-                    required
-                    className="h-14 bg-transparent border-none border-b border-border/60 hover:border-primary/30 focus:border-primary focus:ring-0 rounded-none px-1 transition-all duration-300 text-lg"
-                  />
-                </div>
-                
-                <div className="space-y-3 group/field">
-                  <label className="text-sm font-bold text-foreground/70 ml-1 group-focus-within/field:text-primary transition-colors uppercase tracking-wider">Email Address</label>
-                  <Input
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="email@example.com"
-                    required
-                    className="h-14 bg-transparent border-none border-b border-border/60 hover:border-primary/30 focus:border-primary focus:ring-0 rounded-none px-1 transition-all duration-300 text-lg"
-                  />
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Name</label>
+                    <Input
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="John Doe"
+                      required
+                      className="h-12 bg-black/25 border border-white/10 focus-visible:ring-1 focus-visible:ring-premium-accent/30 focus-visible:border-premium-accent/40 hover:bg-black/35 rounded-xl px-4 transition-all text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email Address</label>
+                    <Input
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="john@example.com"
+                      required
+                      className="h-12 bg-black/25 border border-white/10 focus-visible:ring-1 focus-visible:ring-premium-accent/30 focus-visible:border-premium-accent/40 hover:bg-black/35 rounded-xl px-4 transition-all text-sm"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-3 group/field">
-                  <label className="text-sm font-bold text-foreground/70 ml-1 group-focus-within/field:text-primary transition-colors uppercase tracking-wider">Subject</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Subject</label>
                   <Input
                     name="subject"
                     value={formData.subject}
                     onChange={handleChange}
-                    placeholder="Briefly describe your inquiry"
+                    placeholder="Feedback / Feature Request / Support"
                     required
-                    className="h-14 bg-transparent border-none border-b border-border/60 hover:border-primary/30 focus:border-primary focus:ring-0 rounded-none px-1 transition-all duration-300 text-lg"
+                    className="h-12 bg-black/25 border border-white/10 focus-visible:ring-1 focus-visible:ring-premium-accent/30 focus-visible:border-premium-accent/40 hover:bg-black/35 rounded-xl px-4 transition-all text-sm"
                   />
                 </div>
 
-                <div className="space-y-3 group/field">
-                  <label className="text-sm font-bold text-foreground/70 ml-1 group-focus-within/field:text-primary transition-colors uppercase tracking-wider">Message</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Message</label>
                   <Textarea
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
-                    placeholder="How can we help you today?"
+                    placeholder="Tell us what's on your mind..."
                     required
-                    rows={6}
-                    className="bg-transparent border-none border-b border-border/60 hover:border-primary/30 focus:border-primary focus:ring-0 rounded-none px-1 transition-all duration-300 resize-none py-4 text-lg"
+                    rows={5}
+                    className="bg-black/25 border border-white/10 focus-visible:ring-1 focus-visible:ring-premium-accent/30 focus-visible:border-premium-accent/40 hover:bg-black/35 rounded-xl p-4 transition-all text-sm resize-none"
                   />
                 </div>
 
                 <Button
                   type="submit"
                   variant="hero"
-                  className="w-full h-14 rounded-2xl text-lg font-semibold shadow-xl shadow-primary/20 group-hover/container:scale-[1.01] transition-all duration-300"
+                  className="w-full h-12 rounded-xl text-sm font-semibold shadow-lg shadow-premium-accent/10 hover:shadow-premium-accent/20 hover:scale-[1.005] transition-all"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       <span>Sending...</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
+                    <div className="flex items-center gap-2 justify-center">
+                      <Send className="w-4 h-4" />
                       <span>Send Message</span>
                     </div>
                   )}
@@ -237,55 +196,56 @@ const Contact = () => {
             )}
           </div>
 
-          {/* Minimal Info Row */}
-          {!submitted && (
-            <div className="grid grid-cols-2 gap-4 mt-8 animate-fade-in delay-500 fill-mode-forwards opacity-0">
-              <div className="glass-card p-5 flex flex-col items-center text-center gap-3 border-primary/5 hover:border-primary/20 transition-colors">
-                <Clock className="w-6 h-6 text-primary/60" />
-                <div>
-                  <p className="text-xs font-bold text-foreground">Response Time</p>
-                  <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Usually within 24-48h</p>
+          {/* Column 3: Sidebar Bento Modules */}
+          <div className="space-y-6 lg:col-span-1 animate-fade-in-up" style={{ animationDelay: "150ms", animationFillMode: "forwards" }}>
+            {/* Card 1: WhatsApp Community connection */}
+            <div className="bg-emerald-500/[0.03] border border-emerald-500/10 rounded-3xl p-5 hover:bg-emerald-500/[0.06] transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400 w-fit mb-4">
+                  <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.457 5.704 1.459h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
                 </div>
+                <h3 className="text-base font-bold text-foreground mb-1">WhatsApp Community</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                  Join our official community for updates, reflections, support, and to connect with the TilawaNow family.
+                </p>
               </div>
-              <button
-                onClick={() => setIsFeedbackOpen(true)}
-                className="glass-card p-5 flex flex-col items-center text-center gap-3 border-primary/5 hover:border-primary/20 hover:bg-secondary/30 transition-all group"
-              >
-                <MessageSquare className="w-6 h-6 text-primary/60 group-hover:scale-110 transition-transform" />
-                <div>
-                  <p className="text-xs font-bold text-foreground">Share Feedback</p>
-                  <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Help us improve the app</p>
-                </div>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Support Call to Action - Clean Layout */}
-        <div className="max-w-4xl mx-auto mt-20 md:mt-32">
-          <div className="relative p-0 text-center overflow-hidden">
-            <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-10 shadow-inner">
-                <Heart className="w-10 h-10 text-primary fill-primary/20" />
-              </div>
-
-              <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-8 tracking-tighter">Support TilawaNow</h2>
-
-              <p className="text-muted-foreground text-xl mb-12 leading-relaxed max-w-xl opacity-80">
-                TilawaNow is built and maintained voluntarily to spread the light of the Qur’an.
-                If you find this tool beneficial, your voluntary support helps us keep it <strong className="text-foreground">free forever</strong>.
-              </p>
-
               <Button
-                variant="hero"
-                size="xl"
-                className="rounded-2xl px-12 h-16 text-xl shadow-2xl shadow-primary/20 hover:scale-105 transition-all"
-                onClick={() => setIsDonateOpen(true)}
+                className="w-full gap-2 bg-[#25D366] hover:bg-[#20ba5a] text-black font-semibold rounded-xl h-10 border-none text-xs"
+                onClick={() => window.open("https://chat.whatsapp.com/Hhd9xE0gFqFEOciGGq6QxS", "_blank")}
               >
-                <Sparkles className="mr-2 w-6 h-6" />
-                Donate Now
+                Join TilawaNow Family
               </Button>
             </div>
+
+
+          </div>
+        </div>
+
+        {/* Support Section - Clean Bento Long Layout */}
+        <div className="mt-16 bg-gradient-to-r from-premium-accent/[0.03] to-blue-500/[0.03] border border-white/5 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden animate-fade-in-up" style={{ animationDelay: "300ms", animationFillMode: "forwards" }}>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-premium-accent/10 blur-[80px] rounded-full pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <div className="max-w-xl">
+              <div className="w-12 h-12 rounded-2xl bg-premium-accent/10 flex items-center justify-center mb-6 shadow-inner text-premium-accent">
+                <Heart className="w-6 h-6 fill-current/20" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight mb-3">Support TilawaNow</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                TilawaNow is built and maintained voluntarily to spread the light of the Quran. If you find this platform beneficial, your support keeps it <strong className="text-foreground">free forever</strong>.
+              </p>
+            </div>
+            <Button
+              variant="hero"
+              size="lg"
+              className="rounded-xl px-8 h-12 text-sm shadow-xl shadow-premium-accent/10 hover:shadow-premium-accent/25 shrink-0"
+              onClick={() => navigate.push("/donate")}
+            >
+              <Sparkles className="mr-2 w-4 h-4" />
+              Donate Now
+            </Button>
           </div>
         </div>
       </div>
@@ -294,99 +254,9 @@ const Contact = () => {
         <Footer />
       </div>
 
-      {/* Enhanced Feedback Dialog */}
-      <Dialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen}>
-        <DialogContent className="sm:max-w-md bg-card border-border p-8 rounded-[2rem] shadow-2xl">
-          <DialogHeader className="mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-              <MessageSquare className="w-6 h-6 text-primary" />
-            </div>
-            <DialogTitle className="text-2xl font-bold">Share Feedback</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              What features would you like to see? How can we make your experience better?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6">
-            <Textarea
-              value={feedbackText}
-              onChange={(e) => setFeedbackText(e.target.value)}
-              placeholder="I love the reading mode, but I think you should add..."
-              className="min-h-[160px] bg-secondary/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 rounded-2xl p-4 resize-none transition-all duration-300"
-            />
-            <div className="flex gap-3">
-              <Button variant="ghost" className="flex-1 rounded-xl h-12" onClick={() => setIsFeedbackOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 rounded-xl h-12 bg-primary text-primary-foreground hover:bg-primary/90"
-                onClick={handleFeedbackSubmit}
-                disabled={isFeedbackSubmitting || !feedbackText.trim()}
-              >
-                {isFeedbackSubmitting ? "Sending..." : "Send Feedback"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Enhanced Donate Dialog */}
-      <Dialog open={isDonateOpen} onOpenChange={setIsDonateOpen}>
-        <DialogContent className="sm:max-w-sm bg-card border-border p-8 md:p-12 rounded-[2.5rem] shadow-2xl flex flex-col items-center justify-center">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none" />
 
-          <div className="flex flex-col items-center text-center relative z-10 w-full">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-              <Heart className="w-7 h-7 text-primary fill-primary/20" />
-            </div>
 
-            <DialogTitle className="text-3xl font-bold mb-3 tracking-tight">Support TilawaNow</DialogTitle>
-
-            <DialogDescription className="text-muted-foreground text-base mb-6 max-w-[240px] leading-relaxed mx-auto">
-              Your contribution helps keep the Qur'an accessible to everyone worldwide.
-            </DialogDescription>
-
-            {/* Premium QR Code Container */}
-            <div className="relative group p-3 bg-white/5 rounded-3xl border border-border/50 mb-6 overflow-hidden transition-all duration-500 hover:border-primary/30">
-              <div className="absolute inset-0 bg-primary/5 blur-xl group-hover:scale-150 transition-transform duration-700 pointer-events-none" />
-              <div className="relative bg-white p-3 rounded-2xl shadow-2xl">
-                <div className="w-40 h-40 bg-white flex items-center justify-center overflow-hidden">
-                  <img src="/TilawaNow_qr_code.png" alt="Donate QR Code" className="w-full h-full object-contain" />
-                </div>
-              </div>
-            </div>
-
-            {/* Responsive Payment UI */}
-            <div className="w-full">
-              {/* Desktop/Tablet Text */}
-              <div className="hidden sm:block mb-4">
-                <p className="text-2xl font-bold text-foreground tracking-tight">Pay via UPI</p>
-                <p className="text-xs text-muted-foreground mt-1 opacity-60">Scan the QR code to donate</p>
-              </div>
-
-              {/* Mobile Button */}
-              <div className="sm:hidden mb-4">
-                <Button
-                  className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white gap-3 h-14 rounded-2xl text-lg font-bold shadow-xl shadow-blue-500/10"
-                  onClick={() => {
-                    const upiId = "your-upi-id@bank";
-                    const name = "TilawaNow";
-                    const url = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&cu=INR`;
-                    window.location.href = url;
-                  }}
-                >
-                  <QrCode className="w-6 h-6" />
-                  Pay via UPI App
-                </Button>
-              </div>
-
-              <p className="text-[10px] text-muted-foreground font-medium flex items-center justify-center gap-2 opacity-50 uppercase tracking-widest">
-                <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-                Secure Transaction
-              </p>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

@@ -11,7 +11,7 @@ import {
 export const QURAN_KEYS = {
   surahs: ["surahs"] as const,
   surah: (id: number) => ["surah", id] as const,
-  verses: (id: number, transId: number, script: string) => ["verses", id, transId, script] as const,
+  verses: (id: number, transId: number, script: string, wbw: string) => ["verses", id, transId, script, wbw] as const,
   audios: (id: number, reciterId: number) => ["audios", id, reciterId] as const,
   profile: (userId: string) => ["profile", userId] as const,
 };
@@ -38,10 +38,10 @@ export function useSurahMetadata(id: number) {
 /**
  * Hook to fetch and cache verses for a Surah
  */
-export function useVerses(surahId: number, translationId: number = 20, script: string = "text_uthmani") {
+export function useVerses(surahId: number, translationId: number = 20, script: string = "text_uthmani", wbwLanguage: string = "en") {
   return useQuery({
-    queryKey: QURAN_KEYS.verses(surahId, translationId, script),
-    queryFn: () => fetchVerses(surahId, translationId, 1, 300, script),
+    queryKey: QURAN_KEYS.verses(surahId, translationId, script, wbwLanguage),
+    queryFn: () => fetchVerses(surahId, translationId, 1, 300, script, wbwLanguage),
     staleTime: 1000 * 60 * 60, // 1 hour
     enabled: !!surahId,
   });

@@ -16,14 +16,14 @@ const buttonVariants = cva(
         ghost: "hover:bg-secondary hover:text-foreground rounded-lg",
         link: "text-primary underline-offset-4 hover:underline",
         // Hero button - primary CTA with glow effect
-        hero: "bg-primary text-primary-foreground rounded-xl shadow-[0_4px_20px_hsl(210_35%_55%/0.3)] hover:shadow-[0_8px_30px_hsl(210_35%_55%/0.4)] hover:-translate-y-0.5",
+        hero: "bg-primary text-primary-foreground rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5",
         // Hero outline - secondary hero button
         heroOutline: "border border-border bg-secondary/50 text-foreground rounded-xl hover:bg-secondary hover:border-primary/50",
         // CTA button for blue sections
         cta: "bg-card text-foreground rounded-xl hover:bg-card/90 shadow-lg hover:shadow-xl hover:-translate-y-0.5",
         // Sidebar navigation
         sidebar: "w-full justify-start bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg transition-all duration-200",
-        sidebarActive: "w-full justify-start bg-sidebar-accent text-primary shadow-[inset_3px_0_0_0_theme(colors.primary.DEFAULT)] rounded-lg transition-all duration-200",
+        sidebarActive: "w-full justify-start bg-sidebar-accent text-primary rounded-lg transition-all duration-200",
       },
       size: {
         default: "h-10 px-4 py-2",

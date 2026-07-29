@@ -47,10 +47,10 @@ export const RestrictedAccess = ({ title, description, icon: Icon }: RestrictedA
 
         <div className="flex flex-col gap-3 w-full max-w-[200px]">
           <Button asChild variant="hero" className="w-full h-12 rounded-2xl shadow-xl shadow-primary/10 font-bold text-sm tracking-tight">
-            <Link href="/signup">Create Account</Link>
+            <Link href="/account">Account</Link>
           </Button>
           <Button asChild variant="ghost" className="w-full h-12 rounded-2xl text-muted-foreground/60 hover:text-foreground hover:bg-secondary/50 transition-all font-bold text-sm tracking-tight">
-            <Link href="/login">Sign In</Link>
+            <Link href="/">Back to Home</Link>
           </Button>
         </div>
         

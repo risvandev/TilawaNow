@@ -55,6 +55,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setLoading(false);
                 }
             }
+        }).catch(err => {
+            console.error("Auth session fetch error:", err);
+            if (mounted) setLoading(false);
         });
 
         return () => {

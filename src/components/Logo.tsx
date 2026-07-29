@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +34,7 @@ export const Logo = ({
 
     return (
         <div className={cn("flex items-center gap-2", className)}>
-            <div className={cn("rounded-lg bg-primary/10 flex items-center justify-center p-1 backdrop-blur-sm", iconClassName)}>
+            <div className={cn("flex items-center justify-center", iconClassName)}>
                 <img 
                     src="/quran-logo.svg" 
                     alt="TilawaNow Logo" 

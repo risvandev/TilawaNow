@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   BookOpen,
   Target,
@@ -15,13 +17,16 @@ import {
   Play,
   Pause,
   Loader2,
-  RotateCcw
+  RotateCcw,
+  ArrowUpRight,
+  RefreshCw
 } from "lucide-react";
 import { RestrictedAccess } from "@/components/auth/RestrictedAccess";
 import { QURAN_STATS } from "@/lib/quran-api";
+import { usePrefetch } from "@/hooks/use-prefetch";
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   Tooltip,
   ResponsiveContainer,
@@ -30,17 +35,41 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useBookmarks } from "@/contexts/BookmarksContext";
 import { useKhatmah } from "@/contexts/KhatmahContext";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/lib/supabase";
 import { useSurahs } from "@/hooks/use-quran-queries";
-import { useState, useEffect } from "react";
+
+const CustomXAxisTick = (props: any) => {
+  const { x, y, payload } = props;
+  if (!payload || !payload.value) return null;
+  const parts = String(payload.value).split(" ");
+  const dayName = parts[0] || "";
+  const dateNum = parts[1] || "";
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={10} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={11} fontWeight={700}>
+        {dateNum}
+      </text>
+      <text x={0} y={23} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={9} fontWeight={500} opacity={0.7}>
+        {dayName}
+      </text>
+    </g>
+  );
+};
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
+  const { prefetchRoute, prefetchSurahData } = usePrefetch();
   const navigate = useRouter();
   const { readingHistory, userStats, dailyActivity } = useBookmarks();
   const { isKhatmahActive, currentProgress, isLoading: isKhatmahLoading, startKhatmah, stopKhatmah, restartKhatmah } = useKhatmah();
+  const { unlockAudio } = useAudioPlayer();
   const { data: allSurahs = [] } = useSurahs();
-  const [readingProfile, setReadingProfile] = useState<{ last_read_surah: number; last_read_ayah: number } | null>(null);
+  // unused state removed
+
+  // Premium Mac Glass Class
+  const glassPanelClass = "md:bg-secondary/40 md:backdrop-blur-3xl md:border md:border-white/[0.08] md:shadow-2xl md:shadow-black/40 md:rounded-[2rem] md:p-6 p-4 border-none bg-transparent rounded-none relative transition-all duration-500 group md:hover:bg-secondary/50 md:hover:border-white/[0.12]";
 
   // Derived Stats
   const totalSurahsStarted = readingHistory.length;
@@ -53,24 +82,36 @@ const Dashboard = () => {
   const ayahsToday = todayActivity ? todayActivity.count : 0;
 
   // Activity Data
-  const getActivityData = () => {
+  const activityData = useMemo(() => {
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const today = new Date();
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const last14Days = Array.from({ length: 14 }, (_, i) => {
       const d = new Date(today);
-      d.setDate(today.getDate() - (6 - i));
+      d.setDate(today.getDate() - (13 - i));
       return d;
     });
 
-    return last7Days.map(d => {
+    return last14Days.map(d => {
       const dayName = days[d.getDay()];
       const dateStr = d.toISOString().split('T')[0];
       const activity = dailyActivity.find(a => a.date === dateStr);
-      return { name: dayName, ayahs: activity ? activity.count : 0 };
+      const formattedDate = `${dayName} ${d.getDate()}`;
+      return { name: formattedDate, ayahs: activity ? activity.count : 0 };
     });
-  };
+  }, [dailyActivity]);
 
-  const activityData = getActivityData();
+  const chartScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const scrollRight = () => {
+      if (chartScrollRef.current) {
+        chartScrollRef.current.scrollLeft = chartScrollRef.current.scrollWidth;
+      }
+    };
+    scrollRight();
+    const timer = setTimeout(scrollRight, 150);
+    return () => clearTimeout(timer);
+  }, [activityData]);
 
   // Recent Sessions
   const recentSessions = [...readingHistory]
@@ -88,62 +129,35 @@ const Dashboard = () => {
   const [suggestion, setSuggestion] = useState<{ type: 'unread' | 'popular', title: string, subtitle: string, link: string } | null>(null);
 
   useEffect(() => {
-    const calculateSuggestions = async () => {
-      if (!user) return;
-      try {
-        // Fetch RDS Profile for Resume Engine
-        const { data: profile } = await supabase
-          .from('user_reading_profile')
-          .select('last_read_surah, last_read_ayah')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        if (profile) {
-          setReadingProfile({ 
-            last_read_surah: profile.last_read_surah, 
-            last_read_ayah: profile.last_read_ayah 
-          });
-        }
+    if (!user || allSurahs.length === 0) return;
 
-        const { data: popularData } = await supabase
-          .from('verses_read')
-          .select('verse_key, read_count')
-          .eq('user_id', user.id)
-          .order('read_count', { ascending: false })
-          .limit(1)
-          .single();
+    if (readingHistory.length > 0) {
+      const latest = readingHistory[0];
+      const lastReadSurah = latest.surah_id;
+      const lastReadAyah = latest.verse_key ? parseInt(latest.verse_key.split(':')[1]) : 1;
+      const surahName = allSurahs.find(s => s.id === lastReadSurah)?.name_simple || "Surah";
+      
+      setSuggestion({
+        type: 'popular', 
+        title: "Continue Reading",
+        subtitle: `Resume from ${surahName} Ayah ${lastReadAyah}`,
+        link: `/read/${lastReadSurah}?verse=${lastReadAyah}&play=true`
+      });
 
-        const startedSurahIds = new Set(readingHistory.map(h => h.surah_id));
-        const unreadSurah = allSurahs.find(s => !startedSurahIds.has(s.id));
-
-        if (profile) {
-          const surahName = allSurahs.find(s => s.id === profile.last_read_surah)?.name_simple || "Surah";
-          setSuggestion({
-            type: 'popular', // reuse style
-            title: "Continue Reading",
-            subtitle: `Resume from ${surahName} Ayah ${profile.last_read_ayah}`,
-            link: `/read/${profile.last_read_surah}?verse=${profile.last_read_ayah}`
-          });
-        } else if (popularData && popularData.read_count > 1) {
-          setSuggestion({
-            type: 'popular',
-            title: "Most Read Ayah",
-            subtitle: `You've read Ayah ${popularData.verse_key} ${popularData.read_count} times`,
-            link: `/read/${popularData.verse_key.split(':')[0]}?verse=${popularData.verse_key.split(':')[1]}`
-          });
-        } else if (unreadSurah) {
-          setSuggestion({
-            type: 'unread',
-            title: "Try Something New",
-            subtitle: `Read Surah ${unreadSurah.name_simple} (${unreadSurah.translated_name.name})`,
-            link: `/read/${unreadSurah.id}`
-          });
-        }
-      } catch (e) {
-        console.error("Error calculating suggestions", e);
+      // Pre-fetch surah data and route in background for instant transition
+      prefetchSurahData(lastReadSurah);
+      prefetchRoute(`/read/${lastReadSurah}?verse=${lastReadAyah}&play=true`);
+    } else {
+      const unreadSurah = allSurahs[0];
+      if (unreadSurah) {
+        setSuggestion({
+          type: 'unread',
+          title: "Start Your Journey",
+          subtitle: `Read Surah ${unreadSurah.name_simple} (${unreadSurah.translated_name.name})`,
+          link: `/read/${unreadSurah.id}`
+        });
       }
-    };
-    calculateSuggestions();
+    }
   }, [user, readingHistory, allSurahs]);
 
   if (loading) {
@@ -165,265 +179,434 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 md:px-6 py-8 max-w-6xl">
+    <div className="relative min-h-screen bg-background overflow-x-hidden font-sans pb-32 md:pb-0">
+      
+      {/* Ambient Mac-like Glows */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[140px] pointer-events-none opacity-60 mix-blend-screen" />
+      <div className="absolute top-[30%] right-[-10%] w-[40%] h-[40%] rounded-full bg-premium-accent/10 blur-[140px] pointer-events-none opacity-50 mix-blend-screen" />
+      <div className="absolute bottom-[-10%] left-[20%] w-[30%] h-[30%] rounded-full bg-white/5 blur-[120px] pointer-events-none mix-blend-screen" />
+
+      <div className="relative z-10 container mx-auto px-4 md:px-8 py-4 md:py-12 lg:py-20 max-w-7xl">
+        
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 md:mb-10 animate-fade-in">
-          <div className="w-full md:w-auto">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-1 md:mb-2">
-                  Welcome back,
-                  <span className="block md:inline text-[#648CB4] md:ml-2">{user.user_metadata.full_name || "User"}</span>
-                </h1>
-                <p className="text-muted-foreground text-sm md:text-lg">Your spiritual journey continues.</p>
-              </div>
-
-              <Link href="/settings" className="md:hidden shrink-0 mt-1">
-                <div className="w-10 h-10 rounded-full bg-secondary/50 hover:bg-secondary flex items-center justify-center border border-border/50 transition-colors">
-                  <Settings className="w-5 h-5 text-foreground" />
-                </div>
-              </Link>
-            </div>
+        <div className="flex items-center justify-between gap-4 mb-8 md:mb-12 animate-fade-in-up mt-2 md:mt-0 p-4 md:p-0 bg-secondary/30 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none rounded-[2rem] md:rounded-none border border-white/10 md:border-transparent shadow-lg shadow-black/20 md:shadow-none">
+          <div className="flex-1">
+            <p className="text-[10px] md:text-base text-muted-foreground/80 font-bold md:font-medium tracking-wider md:tracking-wide uppercase md:normal-case mb-0.5 md:mb-2">
+              <span className="md:hidden">DASHBOARD</span>
+              <span className="hidden md:inline">Welcome back,</span>
+            </p>
+            <h1 className="text-xl md:text-5xl font-extrabold tracking-tight md:tracking-tighter text-foreground drop-shadow-sm">
+              {user.user_metadata?.full_name?.split(' ')[0] || 'Friend'}
+            </h1>
+            <p className="hidden md:block text-sm md:text-base text-muted-foreground/80 font-medium tracking-wide mt-1">
+              Your spiritual journey continues.
+            </p>
           </div>
-
-          <div className="flex items-center justify-end gap-3 w-full md:w-auto">
-            <div className="hidden md:flex flex-col items-end mr-2">
-              <span className="text-sm font-medium text-foreground">Current Streak</span>
-              <span className="text-xs text-muted-foreground">{currentStreak} days</span>
+          
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="hidden md:flex flex-col items-end mr-4">
+              <span className="text-sm font-bold text-foreground">Current Streak</span>
+              <span className="text-xs text-orange-500 font-medium flex items-center gap-1">
+                <Flame className="w-3 h-3" /> {currentStreak} days
+              </span>
             </div>
-            <Link href="/settings" className="hidden md:block">
-              <div className="w-12 h-12 rounded-full bg-secondary/50 hover:bg-secondary flex items-center justify-center border border-border/50 transition-colors">
-                <Settings className="w-6 h-6 text-foreground" />
-              </div>
-            </Link>
-          </div>
-        </div>
-
-        {/* Khatmah Widget */}
-        {currentProgress && (
-          <div className="glass-card p-4 md:p-6 mb-8 bg-gradient-to-r from-primary/5 to-transparent border-primary/20 flex flex-row items-center justify-between gap-3 md:gap-6 animate-fade-in-up delay-100">
-            <div className="flex items-center gap-3 md:gap-4 min-w-0">
-              <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 text-primary shadow-sm">
-                <Target className="w-5 h-5 md:w-7 md:h-7" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-base md:text-xl font-bold text-foreground mb-0 md:mb-1 truncate">
-                  Khatmah
-                  <span className="hidden md:inline"> (Continuous Recitation)</span>
-                </h3>
-                <p className="text-sm text-muted-foreground hidden md:block">
-                  Resume from Surah {currentProgress.surah_id}
-                </p>
-                <p className="text-xs text-muted-foreground md:hidden truncate">
-                  Surah {currentProgress.surah_id}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 md:gap-2 shrink-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 md:h-10 md:w-10 shrink-0"
-                onClick={async () => {
-                  if (confirm("Are you sure you want to restart your Khatmah from the beginning?")) {
-                    await restartKhatmah();
-                  }
-                }}
-                disabled={isKhatmahLoading}
-                title="Restart Khatmah"
-              >
-                <RotateCcw className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              </Button>
-
-              <Button
-                size="lg"
-                className="w-auto min-w-0 h-8 px-3 text-xs md:h-12 md:px-8 md:text-base md:min-w-[140px] shadow-lg shadow-primary/20 shrink-0"
-                variant={isKhatmahActive ? "destructive" : "default"}
-                onClick={async () => {
-                  if (isKhatmahActive) {
-                    stopKhatmah();
-                  } else {
-                    await startKhatmah();
-                    const targetSurah = currentProgress?.surah_id || 1;
-                    navigate.push(`/read/${targetSurah}`);
-                  }
-                }}
-                disabled={isKhatmahLoading}
-              >
-                {isKhatmahLoading ? (
-                  <Loader2 className="w-3.5 h-3.5 md:w-5 md:h-5 animate-spin" />
-                ) : isKhatmahActive ? (
-                  <>
-                    <Pause className="w-3.5 h-3.5 md:w-5 md:h-5 mr-1.5 md:mr-2" />
-                    <span className="md:hidden">Stop</span>
-                    <span className="hidden md:inline">Stop Khatmah</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-3.5 h-3.5 md:w-5 md:h-5 mr-1.5 md:mr-2" />
-                    <span className="md:hidden">Resume</span>
-                    <span className="hidden md:inline">Resume Khatmah</span>
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Main Stats Grid */}
-        <div className="grid grid-cols-3 gap-3 md:gap-6 mb-8 md:mb-10">
-          {[
-            {
-              label: "Ayahs Read Today",
-              value: ayahsToday,
-              sub: "Daily activity total",
-              icon: BookOpen,
-              color: "text-blue-500",
-              bgColor: "bg-blue-500/10",
-              borderColor: "border-blue-500/20"
-            },
-            {
-              label: "Surahs Started",
-              value: totalSurahsStarted,
-              sub: `${QURAN_STATS.totalSurahs - totalSurahsStarted} Remaining`,
-              icon: Target,
-              color: "text-purple-500",
-              bgColor: "bg-purple-500/10",
-              borderColor: "border-purple-500/20"
-            },
-            {
-              label: "Current Streak",
-              value: currentStreak,
-              sub: "Days active",
-              icon: Flame,
-              color: "text-orange-500",
-              bgColor: "bg-orange-500/10",
-              borderColor: "border-orange-500/20"
-            }
-          ].map((stat, index) => (
-            <div
-              key={index}
-              className="glass-card p-3 md:p-6 hover-lift border border-border/50 relative overflow-hidden group animate-fade-in-up"
-              style={{ animationDelay: `${index * 100}ms` }}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => {
+                // Clear session cache to force hard fetch
+                sessionStorage.removeItem(`user_data_${user.id}`);
+                window.location.reload();
+              }}
+              className="w-10 h-10 md:h-12 md:w-12 rounded-full md:rounded-xl border-white/10 bg-secondary/40 backdrop-blur-xl hover:bg-white/10 hover:border-white/20 transition-all shadow-lg shrink-0 group/refresh"
+              title="Refresh Stats"
             >
-              <div className="mt-1 md:mt-2">
-                <p className="text-muted-foreground font-medium text-[10px] md:text-sm mb-0.5 md:mb-1">{stat.label}</p>
-                <h3 className="text-lg md:text-3xl font-bold text-foreground mb-0.5 md:mb-1">{stat.value}</h3>
-                <p className="text-[9px] md:text-xs text-muted-foreground truncate">{stat.sub}</p>
-              </div>
-            </div>
-          ))}
+              <RefreshCw className="w-4 h-4 md:w-5 md:h-5 group-hover/refresh:rotate-180 transition-transform duration-500" />
+            </Button>
+            <Button asChild variant="outline" size="icon" className="w-10 h-10 md:h-12 md:w-12 rounded-full md:rounded-xl border-white/10 bg-secondary/40 backdrop-blur-xl hover:bg-white/10 hover:border-white/20 transition-all shadow-lg shrink-0">
+              <Link href="/settings">
+                <Settings className="w-4 h-4 md:w-5 md:h-5" />
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-10">
-          <div className="lg:col-span-2 space-y-8">
-            <div className="glass-card p-8 animate-fade-in-up delay-200">
-              <div className="flex items-center justify-between mb-6">
+        {/* Bento Grid layout */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-min mb-6">
+          
+          {/* Top Row: Khatmah & Stats */}
+          
+          {/* Khatmah Widget - Spans 7 cols if active */}
+          {currentProgress && (
+            <div className={cn(glassPanelClass, "md:col-span-7 flex flex-col justify-between animate-fade-in-up")} style={{ animationDelay: '100ms', animationFillMode: 'forwards', opacity: 0 }}>
+              <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none z-0">
+                <div className="absolute -top-24 -right-12 w-64 h-64 bg-primary/20 rounded-full blur-[70px]" />
+              </div>
+              
+              <div className="flex items-start justify-between mb-8 relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-inner">
+                    <Target className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground tracking-tight">Khatmah</h3>
+                    <p className="text-sm text-muted-foreground/80 font-medium">Continuous Recitation</p>
+                  </div>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+                  onClick={async () => {
+                    if (confirm("Are you sure you want to restart your Khatmah from the beginning?")) {
+                      await restartKhatmah();
+                    }
+                  }}
+                  disabled={isKhatmahLoading}
+                  title="Restart Khatmah"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div className="relative z-10">
+                <p className="text-sm text-muted-foreground mb-6">
+                  You are currently on Surah {currentProgress.surah_id}. Maintain your pace to finish the Quran.
+                </p>
+                
+                <Button
+                  variant={isKhatmahActive ? "outline" : "hero"}
+                  onClick={async () => {
+                    if (isKhatmahActive) {
+                      stopKhatmah();
+                    } else {
+                      await startKhatmah();
+                      const targetSurah = currentProgress?.surah_id || 1;
+                      navigate.push(`/read/${targetSurah}`);
+                    }
+                  }}
+                  disabled={isKhatmahLoading}
+                  className={cn(
+                    "w-full h-12 rounded-xl text-sm font-bold tracking-wide transition-all shadow-lg shadow-black/20",
+                    isKhatmahActive ? "bg-destructive/10 border-destructive/20 text-destructive hover:bg-destructive/20 hover:border-destructive/30" : ""
+                  )}
+                >
+                  {isKhatmahLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : isKhatmahActive ? (
+                    <>
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause Journey
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      Resume Khatmah
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Quick Stats - Spans 5 cols if Khatmah active, 12 cols if no Khatmah */}
+          <div className={cn(glassPanelClass, currentProgress ? "md:col-span-5" : "md:col-span-12", "animate-fade-in-up p-4 md:p-4")} style={{ animationDelay: '150ms', animationFillMode: 'forwards', opacity: 0 }}>
+             <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none z-0">
+               <div className="absolute -bottom-24 -left-12 w-64 h-64 bg-premium-accent/20 rounded-full blur-[70px]" />
+             </div>
+             
+             <div className="grid grid-cols-2 md:grid-cols-1 lg:grid-cols-1 gap-3 md:gap-4 relative z-10">
+               <div className="bg-white/[0.02] md:bg-white/[0.03] border border-white/5 rounded-2xl md:rounded-[1.5rem] p-4 md:p-5 flex items-center justify-between transition-all hover:bg-white/[0.06]">
+                  <div>
+                    <p className="text-[10px] md:text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Ayahs Today</p>
+                    <h3 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">{ayahsToday}</h3>
+                  </div>
+                  <div className="hidden md:flex w-12 h-12 rounded-full bg-blue-500/10 text-blue-500 items-center justify-center shrink-0">
+                    <BookOpen className="w-6 h-6" />
+                  </div>
+               </div>
+               
+               <div className="bg-white/[0.02] md:bg-white/[0.03] border border-white/5 rounded-2xl md:rounded-[1.5rem] p-4 md:p-5 flex items-center justify-between transition-all hover:bg-white/[0.06]">
+                  <div>
+                    <p className="text-[10px] md:text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Surahs Started</p>
+                    <h3 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">{totalSurahsStarted} <span className="text-xs md:text-sm font-medium text-muted-foreground">/ 114</span></h3>
+                  </div>
+                  <div className="hidden md:flex w-12 h-12 rounded-full bg-purple-500/10 text-purple-500 items-center justify-center shrink-0">
+                    <Award className="w-6 h-6" />
+                  </div>
+               </div>
+             </div>
+          </div>
+        </div>
+
+        {/* Second Row: Activity Chart & Recent Sessions */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-min mb-6">
+          
+          {/* Reading Activity Area Chart - Spans 8 cols */}
+          <div className={cn(glassPanelClass, "md:col-span-8 flex flex-col animate-fade-in-up")} style={{ animationDelay: '200ms', animationFillMode: 'forwards', opacity: 0 }}>
+            <div className="flex items-center justify-between mb-4 md:mb-8 relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="hidden md:flex w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 items-center justify-center text-primary">
+                  <Activity className="w-5 h-5" />
+                </div>
                 <div>
-                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-primary" />
-                    Reading Activity
-                  </h2>
-                  <p className="text-sm text-muted-foreground">Ayahs read over the last 7 days</p>
+                  <p className="md:hidden text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Reading Activity</p>
+                  <h3 className="text-lg md:text-lg font-extrabold md:font-bold text-foreground tracking-tight">
+                    <span className="md:hidden">Past 14 Days</span>
+                    <span className="hidden md:inline">Reading Activity</span>
+                  </h3>
+                  <p className="hidden md:block text-xs text-muted-foreground font-medium">Ayahs read over the last 14 days</p>
                 </div>
               </div>
-              <div className="h-[250px] w-full">
+            </div>
+            
+            <div ref={chartScrollRef} className="h-[240px] md:h-[270px] w-full relative z-10 overflow-x-auto overflow-y-hidden scrollbar-none [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden mt-2 md:mt-10">
+              <div className="h-full min-w-[550px] md:min-w-[700px] pt-4">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={activityData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" opacity={0.3} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} dy={10} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }}
-                      itemStyle={{ color: 'hsl(var(--primary))' }}
-                      cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
-                    />
-                    <Bar dataKey="ayahs" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} barSize={32} />
-                  </BarChart>
+                  <AreaChart data={activityData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+                  <defs>
+                    <linearGradient id="colorAyahs" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted-foreground))" opacity={0.15} />
+                  <XAxis 
+                    dataKey="name" 
+                    interval={0}
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={<CustomXAxisTick />}
+                    height={45}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(var(--background), 0.8)', 
+                      backdropFilter: 'blur(12px)',
+                      borderColor: 'rgba(255, 255, 255, 0.1)', 
+                      borderRadius: '16px', 
+                      color: 'hsl(var(--foreground))',
+                      boxShadow: '0 10px 40px -10px rgba(0,0,0,0.3)'
+                    }}
+                    itemStyle={{ color: 'hsl(var(--primary))', fontWeight: 'bold' }}
+                    cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '3 3', opacity: 0.3 }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="ayahs" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorAyahs)" 
+                    activeDot={{ r: 6, fill: "hsl(var(--primary))", stroke: "hsl(var(--background))", strokeWidth: 2 }}
+                  />
+                </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
+          </div>
 
-            <div className="glass-card p-4 md:p-8 animate-fade-in-up delay-300">
-              <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 md:mb-6 flex items-center gap-2">
-                <Clock className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                Recent Sessions
-              </h2>
-              <div className="space-y-3 md:space-y-4">
+          {/* Recent Sessions & Suggestion - Spans 4 cols */}
+          <div className="md:col-span-4 flex flex-col gap-6">
+            
+            <div className={cn(glassPanelClass, "flex-1 animate-fade-in-up")} style={{ animationDelay: '250ms', animationFillMode: 'forwards', opacity: 0 }}>
+              <div className="flex items-center gap-3 mb-4 md:mb-6 relative z-10">
+                <div className="hidden md:flex w-10 h-10 rounded-xl bg-white/5 border border-white/10 items-center justify-center text-foreground">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="md:hidden text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Activity History</p>
+                  <h3 className="text-lg font-bold text-foreground tracking-tight">Recent Sessions</h3>
+                </div>
+              </div>
+              
+              <div className="relative z-10 pl-4 md:pl-0 space-y-4 md:space-y-3 border-l-2 border-white/10 md:border-l-0 ml-2 md:ml-0">
                 {recentSessions.length > 0 ? (
                   recentSessions.map((activity, index) => (
-                    <div key={index} className="group flex items-center gap-3 md:gap-4 p-3 md:p-4 rounded-xl bg-secondary/30 hover:bg-secondary/60 transition-colors border border-transparent hover:border-border/50">
-                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-primary group-hover:scale-110 transition-transform" />
-                      </div>
+                    <div key={index} className="relative group flex items-baseline justify-between p-0 md:p-4 rounded-none md:rounded-2xl bg-transparent md:bg-white/[0.02] border-none md:border md:border-white/5 hover:bg-white/[0.06] transition-all duration-300">
+                      {/* Mobile Timeline Node Dot */}
+                      <span className="md:hidden absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background shadow-sm shadow-primary" />
+
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm md:text-base text-foreground truncate">{activity.surah}</p>
-                        <p className="text-xs md:text-sm text-muted-foreground">Ayah {activity.ayahs}</p>
+                        <div className="flex items-baseline gap-2">
+                          <p className="font-bold text-base md:text-sm text-foreground truncate">{activity.surah}</p>
+                          <span className="text-xs font-semibold text-primary">· Ayah {activity.ayahs}</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground/60 font-medium md:hidden mt-0.5">{activity.date}</p>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs md:text-sm font-medium text-foreground">{activity.duration}</p>
-                        <p className="text-[10px] md:text-xs text-muted-foreground">{activity.date}</p>
+
+                      <div className="hidden md:block text-right shrink-0">
+                        <p className="text-xs text-muted-foreground">{activity.date.split(',')[0]}</p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-muted-foreground text-center py-4 text-sm">No recent activity. Start reading!</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            <div className="glass-card p-8 animate-fade-in-up delay-500">
-              <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
-                <Award className="w-5 h-5 text-yellow-500" />
-                Achievements
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                {/* Achievements Grid with numbers replacing icons */}
-                {[
-                  { icon: Calendar, label: "Active Days", value: `${userStats.totalActiveDays}`, unlocked: userStats.totalActiveDays > 0 },
-                  { icon: Target, label: "Quran Read", value: `${((userStats.uniqueAyahsRead / QURAN_STATS.totalAyahs) * 100).toFixed(1)}%`, unlocked: userStats.uniqueAyahsRead > 0 },
-                  { icon: BookOpen, label: "Surahs", value: `${totalSurahsStarted}`, unlocked: totalSurahsStarted > 0 },
-                  { icon: Award, label: "Total Ayahs", value: `${totalAyahsRead}`, unlocked: totalAyahsRead > 0 },
-                ].map((achievement, index) => (
-                  <div key={index} className={`p-4 rounded-xl border flex flex-col items-center text-center justify-center gap-2 transition-all relative ${achievement.unlocked ? "bg-primary/5 border-primary/20" : "bg-muted/30 border-transparent opacity-50 grayscale"}`}>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-1 text-sm font-bold ${achievement.unlocked ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
-                      {achievement.value}
-                    </div>
-                    <span className="text-sm font-bold text-foreground leading-tight">{achievement.label}</span>
+                  <div className="text-center py-8 px-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <p className="text-sm text-muted-foreground">No recent activity.</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
             {suggestion && (
-              <div className="glass-card p-8 animate-fade-in-up delay-600 bg-gradient-to-br from-primary/10 to-transparent border border-primary/20">
-                <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <Flame className="w-5 h-5 text-orange-500" />
-                  {suggestion.title}
-                </h2>
-                <p className="text-muted-foreground mb-6">{suggestion.subtitle}</p>
-                <Button asChild variant="default" className="w-full">
-                  <Link href={suggestion.link}>Go to {suggestion.type === 'unread' ? 'Surah' : 'Ayah'}</Link>
-                </Button>
-              </div>
+               <div className={cn(glassPanelClass, "animate-fade-in-up p-4 md:p-6")} style={{ animationDelay: '300ms', animationFillMode: 'forwards', opacity: 0 }}>
+                 <div className="hidden md:block absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50 rounded-[2rem]" />
+                 
+                 {/* Desktop Suggestion Card */}
+                 <div className="hidden md:flex relative z-10 flex-col items-center text-center">
+                   <div className="w-12 h-12 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center mb-4">
+                     <Flame className="w-6 h-6" />
+                   </div>
+                   <h4 className="font-bold text-foreground mb-1">{suggestion.title}</h4>
+                   <p className="text-xs text-muted-foreground mb-5">{suggestion.subtitle}</p>
+                   <Button asChild variant="hero" className="w-full rounded-xl shadow-lg shadow-black/20">
+                     <Link onClick={() => unlockAudio()} href={suggestion.link}>Go to {suggestion.type === 'unread' ? 'Surah' : 'Ayah'}</Link>
+                   </Button>
+                 </div>
+
+                 {/* Mobile Minimal White Button */}
+                 <div className="md:hidden">
+                   <Button asChild className="flex flex-col items-center justify-center w-full h-14 rounded-[2rem] bg-white text-black hover:bg-white/90 border-none transition-all font-semibold relative z-10 shadow-2xl p-0">
+                     <Link onClick={() => unlockAudio()} href={suggestion.link} className="flex flex-col items-center justify-center gap-0 leading-none">
+                       <div className="text-black font-extrabold text-base leading-none">
+                         <span>{suggestion.title}</span>
+                       </div>
+                       <span className="text-[11px] text-black/75 font-medium leading-none -mt-0.5">
+                         ({suggestion.subtitle})
+                       </span>
+                     </Link>
+                   </Button>
+                 </div>
+               </div>
             )}
             
-            <div className="glass-card p-8 bg-primary/5 border-primary/10">
-               <h3 className="font-bold text-foreground mb-2">Track Your Progress</h3>
-               <p className="text-sm text-muted-foreground mb-4">You&apos;ve read {totalAyahsRead} ayahs in total across {totalSurahsStarted} surahs. Keep up the consistent habit!</p>
-               <Button asChild variant="hero" className="w-full">
-                  <Link href={readingProfile ? `/read/${readingProfile.last_read_surah}?verse=${readingProfile.last_read_ayah}` : "/read"}>
-                    {readingProfile ? "Continue Reading" : "Start Reading"}
-                  </Link>
-               </Button>
-            </div>
           </div>
         </div>
+
+        {/* Third Row: Active Days Leaderboard + Achievements */}
+        <div className="grid grid-cols-1 gap-4 md:gap-6 auto-rows-min mb-12">
+
+           {/* Active Days — Standalone Leaderboard Card (Mobile) */}
+           <div className="md:hidden animate-fade-in-up bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 rounded-[2rem] p-5 relative overflow-hidden" style={{ animationDelay: '380ms', animationFillMode: 'forwards', opacity: 0 }}>
+             <div className="absolute -top-16 -right-16 w-48 h-48 bg-orange-500/10 rounded-full blur-[60px] pointer-events-none" />
+             <div className="relative z-10">
+               <div className="flex items-center justify-between mb-3">
+                 <div>
+                   <p className="text-[10px] font-bold uppercase tracking-wider text-orange-400/80 mb-0.5">Your Streak</p>
+                   <h3 className="text-lg font-extrabold text-foreground tracking-tight">Active Days</h3>
+                 </div>
+                 <div className="flex items-baseline gap-1">
+                   <span className="text-3xl font-extrabold text-foreground tracking-tighter">{userStats.totalActiveDays}</span>
+                   <span className="text-xs font-semibold text-muted-foreground/60">days</span>
+                 </div>
+               </div>
+               <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden mb-4">
+                 <div 
+                   className="h-full bg-gradient-to-r from-orange-500/70 to-orange-400 rounded-full transition-all duration-500" 
+                   style={{ width: `${Math.min(100, (userStats.totalActiveDays / (userStats.totalActiveDays < 7 ? 7 : userStats.totalActiveDays < 30 ? 30 : userStats.totalActiveDays < 100 ? 100 : 365)) * 100)}%` }}
+                 />
+               </div>
+               <Link href="/leaderboard" className="flex items-center justify-center w-full py-2.5 rounded-2xl bg-white/[0.06] border border-white/10 text-sm font-bold text-foreground hover:bg-white/10 transition-all">
+                 View Community Leaderboard
+               </Link>
+             </div>
+           </div>
+
+           {/* Achievements (3 remaining + Active Days on Desktop) */}
+           <div className={cn(glassPanelClass, "animate-fade-in-up bg-white/[0.02] border border-white/5 rounded-[2rem] p-5 md:p-6 md:bg-transparent md:border-none md:rounded-none")} style={{ animationDelay: '400ms', animationFillMode: 'forwards', opacity: 0 }}>
+              <div className="flex items-center gap-3 mb-6 md:mb-8 relative z-10">
+                <div className="hidden md:flex w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 items-center justify-center text-yellow-500">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="md:hidden text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">Milestones</p>
+                  <h3 className="text-lg font-bold text-foreground tracking-tight">Achievements</h3>
+                  <p className="hidden md:block text-xs text-muted-foreground font-medium">Your lifetime milestones</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4 md:grid md:grid-cols-4 md:gap-4 relative z-10">
+                {[
+                  { 
+                    label: "Active Days", 
+                    value: `${userStats.totalActiveDays}`, 
+                    displayValue: `${userStats.totalActiveDays} / ${userStats.totalActiveDays < 7 ? 7 : userStats.totalActiveDays < 30 ? 30 : userStats.totalActiveDays < 100 ? 100 : 365} Days`, 
+                    progress: Math.min(100, (userStats.totalActiveDays / (userStats.totalActiveDays < 7 ? 7 : userStats.totalActiveDays < 30 ? 30 : userStats.totalActiveDays < 100 ? 100 : 365)) * 100), 
+                    unlocked: userStats.totalActiveDays > 0,
+                    desktopOnly: false,
+                    mobileOnly: false
+                  },
+                  { 
+                    label: "Quran Read", 
+                    value: `${((userStats.uniqueAyahsRead / QURAN_STATS.totalAyahs) * 100).toFixed(1)}%`, 
+                    displayValue: `${((userStats.uniqueAyahsRead / QURAN_STATS.totalAyahs) * 100).toFixed(1)}%`, 
+                    progress: Math.min(100, (userStats.uniqueAyahsRead / QURAN_STATS.totalAyahs) * 100), 
+                    unlocked: userStats.uniqueAyahsRead > 0,
+                    desktopOnly: false,
+                    mobileOnly: false
+                  },
+                  { 
+                    label: "Surahs", 
+                    value: `${totalSurahsStarted}`, 
+                    displayValue: `${totalSurahsStarted} / 114 Surahs`, 
+                    progress: Math.min(100, (totalSurahsStarted / 114) * 100), 
+                    unlocked: totalSurahsStarted > 0,
+                    desktopOnly: false,
+                    mobileOnly: false
+                  },
+                  { 
+                    label: "Total Ayahs", 
+                    value: `${totalAyahsRead}`, 
+                    displayValue: `${totalAyahsRead} / 6,236 Ayahs`, 
+                    progress: Math.min(100, (totalAyahsRead / 6236) * 100), 
+                    unlocked: totalAyahsRead > 0,
+                    desktopOnly: false,
+                    mobileOnly: false
+                  },
+                ].map((achievement, index) => (
+                  <div 
+                    key={index} 
+                    className={cn(
+                      "p-0 md:p-6 rounded-none md:rounded-2xl border-none md:border flex flex-col justify-center gap-2 md:gap-3 transition-all duration-300",
+                      achievement.label === "Active Days" ? "hidden md:flex" : "",
+                      achievement.unlocked 
+                        ? "md:bg-white/[0.04] md:border-white/10 md:hover:bg-white/[0.08] md:hover:border-white/20 md:hover:-translate-y-1 md:shadow-lg" 
+                        : "md:bg-black/20 md:border-transparent opacity-70 md:opacity-40 md:grayscale"
+                    )}
+                  >
+                    {/* Desktop Circle View */}
+                    <div className={cn(
+                      "hidden md:flex w-14 h-14 rounded-full items-center justify-center text-lg font-bold shadow-inner mx-auto",
+                      achievement.unlocked ? "bg-primary/20 text-primary border border-primary/20" : "bg-white/5 text-white/40"
+                    )}>
+                      {achievement.value}
+                    </div>
+                    <span className="hidden md:block text-sm font-bold text-foreground tracking-wide text-center">{achievement.label}</span>
+
+                    {/* Mobile Minimal Layout with Progressive Bar */}
+                    <div className="md:hidden flex flex-col gap-1.5 w-full">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-foreground tracking-wide">{achievement.label}</span>
+                        <span className="text-xs font-semibold text-primary">{achievement.displayValue}</span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-primary/70 to-primary rounded-full transition-all duration-500" 
+                          style={{ width: `${achievement.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+           </div>
+        </div>
+
       </div>
     </div>
   );
 };
 
 export default Dashboard;
+

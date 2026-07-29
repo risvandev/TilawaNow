@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
     Play, Pause, SkipForward, SkipBack, X,
     Loader2, Repeat, Repeat1, Gauge, ChevronDown,
-    ListMusic, Volume2, Volume1, VolumeX
+    ListMusic, Volume2, Volume1, VolumeX, PictureInPicture2
 } from "lucide-react";
 import * as Slider from "@radix-ui/react-slider";
 import {
@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import ProgressBar from "./ProgressBar";
 import PlayerQueue from "./PlayerQueue";
+import { usePipPlayer } from "@/hooks/usePipPlayer";
 
 const FullPlayer: React.FC = () => {
     const {
@@ -49,8 +50,12 @@ const FullPlayer: React.FC = () => {
         setLoopMode,
         volume,
         setVolume,
+        surahCurrentTime,
+        surahDuration,
+        seekSurah,
     } = useAudioPlayer();
 
+    const { openPip, closePip, isPipOpen } = usePipPlayer();
     const [showQueue, setShowQueue] = React.useState(false);
 
     // Scroll lock and Fullscreen cleanup logic
@@ -190,9 +195,9 @@ const FullPlayer: React.FC = () => {
                         {/* Progress Bar */}
                         <div className="w-full max-w-lg mx-auto mb-6">
                             <ProgressBar
-                                currentTime={currentTime}
-                                duration={duration}
-                                onSeek={seek}
+                                currentTime={surahCurrentTime}
+                                duration={surahDuration}
+                                onSeek={seekSurah}
                             />
                         </div>
 
@@ -279,6 +284,23 @@ const FullPlayer: React.FC = () => {
                                     ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
+                            
+                            {/* PiP Toggle */}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={isPipOpen ? closePip : openPip}
+                                className={cn(
+                                    "gap-2 rounded-lg h-9 px-3",
+                                    isPipOpen
+                                        ? "text-primary bg-primary/10"
+                                        : "text-muted-foreground hover:bg-secondary"
+                                )}
+                                title={isPipOpen ? "Close floating player" : "Pop out player"}
+                            >
+                                <PictureInPicture2 className="w-4 h-4" />
+                                <span className="text-xs font-medium hidden sm:inline">PiP</span>
+                            </Button>
 
                             {/* Queue Toggle */}
                             <Button

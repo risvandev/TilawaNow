@@ -25,14 +25,15 @@ export function usePrefetch() {
   const prefetchSurahData = useCallback(async (
     surahId: number, 
     translationId: number = 20, 
-    script: string = "text_uthmani"
+    script: string = "text_uthmani",
+    wbwLanguage: string = "en"
   ) => {
     const reciterId = getPreferredReciterId();
 
     // Prefetch Verses
     queryClient.prefetchQuery({
-      queryKey: QURAN_KEYS.verses(surahId, translationId, script),
-      queryFn: () => fetchVerses(surahId, translationId, 1, 300, script),
+      queryKey: QURAN_KEYS.verses(surahId, translationId, script, wbwLanguage),
+      queryFn: () => fetchVerses(surahId, translationId, 1, 300, script, wbwLanguage),
       staleTime: 1000 * 60 * 60, // 1 hour
     });
 

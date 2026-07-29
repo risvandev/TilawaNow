@@ -186,23 +186,31 @@ interface MainLayoutProps {
 const MobileBottomNav = () => {
   const pathname = usePathname();
 
+  const mobileNavItems = [
+    { icon: Home, label: "Home", path: "/home" },
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+    { icon: BookOpen, label: "Read", path: "/read" },
+    { icon: Sparkles, label: "AI Chat", path: "/ai" },
+    { icon: Settings, label: "Settings", path: "/settings" },
+  ];
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-16 pb-[env(safe-area-inset-bottom)] bg-background/80 backdrop-blur-lg border-t border-border z-[100] md:hidden flex items-center justify-around px-2">
-      {navItems.map((item) => {
+    <div className="fixed bottom-0 left-0 right-0 h-16 pb-[env(safe-area-inset-bottom)] bg-background/80 backdrop-blur-lg border-t border-border z-[100] md:hidden flex items-center justify-around px-1">
+      {mobileNavItems.map((item) => {
         const isActive = pathname === item.path ||
           (item.path === "/read" && pathname.startsWith("/read"));
         return (
-          <Link key={item.path} href={item.path} className="flex-1">
+          <Link key={item.path} href={item.path} className="flex-1 min-w-0">
             <Button
               variant="ghost"
               size="icon"
               className={cn(
-                "w-full h-full rounded-none flex flex-col items-center justify-center gap-1 hover:bg-transparent",
+                "w-full h-full rounded-none flex flex-col items-center justify-center gap-0.5 hover:bg-transparent py-1",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}
             >
-              <item.icon className={cn("w-5 h-5", isActive && "fill-current")} />
-              <span className="text-[10px] font-medium truncate max-w-full px-1">{item.label}</span>
+              <item.icon className={cn("w-4 h-4 shrink-0", isActive && "fill-current")} />
+              <span className="text-[8.5px] font-medium tracking-tight truncate max-w-full px-0.5 leading-tight">{item.label}</span>
             </Button>
           </Link>
         );

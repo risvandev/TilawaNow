@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Clock, Mail } from "lucide-react";
+import { useSmartBack } from "@/hooks/use-smart-back";
 
 /**
  * Terms & Conditions - Ultra Minimal Industrial Style
@@ -9,6 +10,7 @@ import { ChevronLeft, Clock, Mail } from "lucide-react";
  */
 const TermsConditions = () => {
   const router = useRouter();
+  const handleBack = useSmartBack("/home");
   const effectiveDate = "April 9, 2026";
 
   const sections = [
@@ -32,7 +34,7 @@ const TermsConditions = () => {
             <li>AI-assisted explanations or summaries</li>
             <li>Bookmarks and notes</li>
             <li>Khatmah tracking and progress features</li>
-            <li>User account features and saved preferences</li>
+            <li>User account features and saved preferences (stored locally on your device)</li>
             <li>Donation or support options</li>
           </ul>
           <p>We may update, add, remove, suspend, or modify features at any time, with or without notice.</p>
@@ -221,17 +223,17 @@ const TermsConditions = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pt-32 pb-40 selection:bg-primary/10">
+    <div className="min-h-screen bg-background pt-6 md:pt-32 pb-20 md:pb-40 selection:bg-primary/10">
       <div className="container mx-auto px-6 max-w-2xl">
         <button
-          onClick={() => router.back()}
-          className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors mb-20"
+          onClick={handleBack}
+          className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors mb-6 md:mb-20"
         >
           <ChevronLeft className="w-3 h-3 transition-transform group-hover:-translate-x-1" />
           Back
         </button>
 
-        <header className="mb-24">
+        <header className="mb-8 md:mb-24">
           <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-8 whitespace-nowrap">Terms & Conditions.</h1>
           <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground uppercase bg-muted/50 w-fit px-4 py-2 rounded-md border border-border/50">
             <Clock className="w-3 h-3" />

@@ -10,9 +10,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   current_streak INTEGER DEFAULT 0,
   last_active_date TIMESTAMPTZ,
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  last_read_ayah TEXT,
-  frequent_topics JSONB DEFAULT '[]'::jsonb,
-  ai_knowledge_level TEXT DEFAULT 'Beginner'
+  last_read_ayah TEXT
 );
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -31,22 +29,7 @@ BEGIN
 END $$;
 
 
--- 2. BOOKMARKS
-CREATE TABLE IF NOT EXISTS public.bookmarks (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
-  surah_id INTEGER NOT NULL,
-  verse_key TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
 
-ALTER TABLE public.bookmarks ENABLE ROW LEVEL SECURITY;
-DO $$ 
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can manage own bookmarks' AND tablename = 'bookmarks') THEN
-    CREATE POLICY "Users can manage own bookmarks" ON public.bookmarks FOR ALL USING (auth.uid() = user_id);
-  END IF;
-END $$;
 
 
 -- 3. READING HISTORY
@@ -125,62 +108,8 @@ BEGIN
 END $$;
 
 
--- 7. READING SESSIONS
-CREATE TABLE IF NOT EXISTS public.reading_sessions (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
-  surah_id INTEGER NOT NULL,
-  start_time TIMESTAMPTZ DEFAULT NOW(),
-  end_time TIMESTAMPTZ,
-  duration INTEGER DEFAULT 0
-);
-
-ALTER TABLE public.reading_sessions ENABLE ROW LEVEL SECURITY;
-DO $$ 
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can manage own reading sessions' AND tablename = 'reading_sessions') THEN
-    CREATE POLICY "Users can manage own reading sessions" ON public.reading_sessions FOR ALL USING (auth.uid() = user_id);
-  END IF;
-END $$;
 
 
--- 8. READING ACTIVITY (DETAILED SIGNALS)
-CREATE TABLE IF NOT EXISTS public.reading_activity (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
-  session_id UUID REFERENCES public.reading_sessions ON DELETE CASCADE NOT NULL,
-  surah_id INTEGER NOT NULL,
-  ayah_id INTEGER NOT NULL,
-  visible_duration INTEGER DEFAULT 0,
-  score INTEGER DEFAULT 0,
-  status TEXT,
-  UNIQUE(session_id, surah_id, ayah_id)
-);
-
-ALTER TABLE public.reading_activity ENABLE ROW LEVEL SECURITY;
-DO $$ 
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can manage own reading activity' AND tablename = 'reading_activity') THEN
-    CREATE POLICY "Users can manage own reading activity" ON public.reading_activity FOR ALL USING (auth.uid() = user_id);
-  END IF;
-END $$;
-
-
--- 9. USER READING PROFILE (FOR RESUME FEATURE)
-CREATE TABLE IF NOT EXISTS public.user_reading_profile (
-  user_id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
-  last_read_surah INTEGER NOT NULL,
-  last_read_ayah INTEGER NOT NULL,
-  last_read_timestamp TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE public.user_reading_profile ENABLE ROW LEVEL SECURITY;
-DO $$ 
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can manage own reading profile' AND tablename = 'user_reading_profile') THEN
-    CREATE POLICY "Users can manage own reading profile" ON public.user_reading_profile FOR ALL USING (auth.uid() = user_id);
-  END IF;
-END $$;
 
 
 -- 10. KHATMAH PROGRESS
@@ -214,3 +143,30 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+
+-- 12. AUTOMATIC UNIQUE AYAHS COUNT
+-- This trigger counts unique verses read and updates the profile
+CREATE OR REPLACE FUNCTION public.update_unique_ayahs_read()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE public.profiles
+    SET unique_ayahs_read = (
+      SELECT COUNT(*) FROM public.verses_read WHERE user_id = NEW.user_id
+    )
+    WHERE id = NEW.user_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE public.profiles
+    SET unique_ayahs_read = (
+      SELECT COUNT(*) FROM public.verses_read WHERE user_id = OLD.user_id
+    )
+    WHERE id = OLD.user_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER on_verse_read_change
+  AFTER INSERT OR DELETE ON public.verses_read
+  FOR EACH ROW EXECUTE PROCEDURE public.update_unique_ayahs_read();

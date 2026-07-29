@@ -64,6 +64,9 @@ export default function RootLayout({
         </Providers>
         <Analytics />
 
+        {/* Load Razorpay globally */}
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+
         {/* 2. Add the Google Search Brand Schema right here */}
         <Script
           id="schema-org-branding"

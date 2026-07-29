@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useAudioPlayer } from './AudioPlayerContext';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/lib/supabase';
-import { fetchSurah, fetchVerses, fetchChapterVerseAudios } from '@/lib/quran-api';
+import { fetchSurah, fetchVerses, fetchChapterVerseAudios, getPreferredReciterId } from '@/lib/quran-api';
 import { useToast } from '@/hooks/use-toast';
 
 interface KhatmahProgress {
@@ -30,6 +30,8 @@ export const KhatmahProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setOnPlaylistEnd,
         currentSurah,
         currentVerseKey,
+        isPlaying,
+        togglePlay
     } = useAudioPlayer();
     const { toast } = useToast();
 
@@ -99,7 +101,7 @@ export const KhatmahProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 }
             } catch (err) {
                 if (err instanceof TypeError && err.message === 'Failed to fetch') {
-                    console.error("Khatmah: Network error or Supabase unreachable.");
+                    console.warn("Khatmah: Network error or Supabase unreachable.");
                 } else {
                     console.error("Khatmah: Unexpected error fetching progress", err);
                 }
@@ -142,7 +144,7 @@ export const KhatmahProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const [surah, , audioMap] = await Promise.all([
                 fetchSurah(nextSurahId),
                 fetchVerses(nextSurahId, 20, 1, 300),
-                fetchChapterVerseAudios(nextSurahId)
+                fetchChapterVerseAudios(nextSurahId, getPreferredReciterId())
             ]);
 
             // For simplification, reusing the ReadQuran buffering logic is hard here without full code.
@@ -224,7 +226,7 @@ export const KhatmahProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const [surah, { verses }, audioMap] = await Promise.all([
                 fetchSurah(targetSurahId),
                 fetchVerses(targetSurahId, 20, 1, 286),
-                fetchChapterVerseAudios(targetSurahId)
+                fetchChapterVerseAudios(targetSurahId, getPreferredReciterId())
             ]);
 
             // Merge audio
@@ -275,8 +277,9 @@ export const KhatmahProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const stopKhatmah = () => {
         setIsKhatmahActive(false);
-        // Maybe pause audio too?
-        // useAudioPlayer().togglePlay(); // Optional
+        if (isPlaying) {
+            togglePlay();
+        }
     };
 
     return (

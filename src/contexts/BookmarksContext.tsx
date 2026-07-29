@@ -3,13 +3,6 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-interface Bookmark {
-    id: string;
-    surah_id: number;
-    verse_key: string;
-    created_at: string;
-}
-
 interface ReadingHistory {
     surah_id: number;
     verse_key: string | null;
@@ -25,15 +18,11 @@ interface Mark {
 }
 
 interface BookmarksContextType {
-    bookmarks: Bookmark[];
     readingHistory: ReadingHistory[];
     marks: Mark[];
     userStats: { totalAyahsRead: number; uniqueAyahsRead: number; currentStreak: number; lastActiveDate: string | null; totalActiveDays: number };
     dailyActivity: { date: string, count: number }[];
     isLoading: boolean;
-    addBookmark: (surahId: number, verseKey: string) => Promise<void>;
-    removeBookmark: (verseKey: string) => Promise<void>;
-    isBookmarked: (verseKey: string) => boolean;
     updateReadingHistory: (surahId: number, verseKey: string) => Promise<void>;
     toggleMark: (surahId: number, ayahId: number | null, type: 'ayah' | 'surah') => Promise<void>;
     isMarked: (surahId: number, ayahId: number | null, type: 'ayah' | 'surah') => boolean;
@@ -44,7 +33,6 @@ const BookmarksContext = createContext<BookmarksContextType | undefined>(undefin
 export const BookmarksProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth();
     const { toast } = useToast();
-    const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
     const [readingHistory, setReadingHistory] = useState<ReadingHistory[]>([]);
     const [marks, setMarks] = useState<Mark[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -71,12 +59,19 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
         hasChanges: false
     });
 
+    const pendingMarksSyncRef = useRef<Map<string, { 
+        timer: NodeJS.Timeout; 
+        type: 'add' | 'remove';
+        tempId?: string;
+        existingId?: string;
+        originalMark?: Mark;
+    }>>(new Map());
+
     // Fetch data on mount or user change
     useEffect(() => {
         if (user) {
             fetchUserData();
         } else {
-            setBookmarks([]);
             setReadingHistory([]);
             setMarks([]);
             setDailyActivity([]);
@@ -97,7 +92,6 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
             const cachedDataStr = sessionStorage.getItem(cacheKey);
             if (cachedDataStr) {
                 const cachedData = JSON.parse(cachedDataStr);
-                setBookmarks(cachedData.bookmarks);
                 setReadingHistory(cachedData.readingHistory);
                 setUserStats(cachedData.userStats);
                 setDailyActivity(cachedData.dailyActivity);
@@ -105,15 +99,6 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
                 setIsLoading(false);
                 return;
             }
-
-            // Fetch Bookmarks
-            const { data: bookmarksData, error: bookmarksError } = await supabase
-                .from('bookmarks')
-                .select('id, surah_id, verse_key, created_at')
-                .eq('user_id', user!.id)
-                .order('created_at', { ascending: false });
-
-            if (bookmarksError) throw bookmarksError;
 
             // Fetch History
             const { data: historyData, error: historyError } = await supabase
@@ -153,12 +138,12 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
                 };
             }
 
-            // Fetch Daily Activity (Last 7 Days) for Chart
+            // Fetch Daily Activity (Last 14 Days) for Chart
             const { data: activityData } = await supabase
                 .from('daily_activity')
                 .select('date, ayahs_count')
                 .eq('user_id', user!.id)
-                .gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last 7 days
+                .gte('date', new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()) // Last 14 days
                 .order('date', { ascending: true });
 
             let formattedActivity: {date: string, count: number}[] = [];
@@ -186,7 +171,6 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
             if (marksError) throw marksError;
 
             // Update States
-            setBookmarks(bookmarksData || []);
             setReadingHistory(historyData || []);
             setUserStats(newUserStats);
             setDailyActivity(formattedActivity);
@@ -194,89 +178,23 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
 
             // Save to Session Cache
             sessionStorage.setItem(cacheKey, JSON.stringify({
-                bookmarks: bookmarksData || [],
                 readingHistory: historyData || [],
                 userStats: newUserStats,
                 dailyActivity: formattedActivity,
                 marks: marksData || []
             }));
 
-        } catch (error) {
-            console.error('Error fetching user data:', error);
+        } catch (error: any) {
+            const isFetchErr = error?.message === 'Failed to fetch' || (typeof error === 'string' && error.includes('Failed to fetch'));
+            if (isFetchErr) {
+                console.warn('Bookmarks: Network connection or Supabase unreachable.');
+            } else {
+                console.error('Error fetching user data:', error?.message || error);
+            }
         } finally {
             setIsLoading(false);
         }
     };
-
-
-    const addBookmark = useCallback(async (surahId: number, verseKey: string) => {
-        if (!user) {
-            toast({ title: "Sign in required", description: "Please sign in to save bookmarks." });
-            return;
-        }
-
-        // Optimistic update
-        const tempId = Math.random().toString();
-        const newBookmark: Bookmark = {
-            id: tempId,
-            surah_id: surahId,
-            verse_key: verseKey,
-            created_at: new Date().toISOString()
-        };
-        setBookmarks(prev => [newBookmark, ...prev]);
-
-        try {
-            const { data, error } = await supabase
-                .from('bookmarks')
-                .insert({ user_id: user.id, surah_id: surahId, verse_key: verseKey })
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            // Replace temp with real
-            setBookmarks(prev => prev.map(b => b.id === tempId ? data : b));
-            clearCache(); // Clear cache on mutation
-
-            toast({ title: "Bookmark saved", description: `Verse ${verseKey} added to bookmarks.` });
-        } catch (error) {
-            console.error('Error adding bookmark:', error);
-            setBookmarks(prev => prev.filter(b => b.id !== tempId)); // Revert
-            toast({ variant: "destructive", title: "Error", description: "Failed to save bookmark." });
-        }
-    }, [user, toast, clearCache]);
-
-    const removeBookmark = useCallback(async (verseKey: string) => {
-        if (!user) return;
-
-        setBookmarks(prev => {
-            // We need to store previous state outside or trust the revert logic differently,
-            // but here we just need stable function identity.
-            return prev.filter(b => b.verse_key !== verseKey);
-        });
-
-        try {
-            const { error } = await supabase
-                .from('bookmarks')
-                .delete()
-                .eq('user_id', user.id)
-                .eq('verse_key', verseKey);
-
-            if (error) throw error;
-            clearCache(); // Clear cache on mutation
-            toast({ title: "Bookmark removed" });
-        } catch (error) {
-            console.error('Error removing bookmark:', error);
-            // In a real app we'd revert state here, simplified for now or need refetch
-            fetchUserData();
-            toast({ variant: "destructive", title: "Error", description: "Failed to remove bookmark." });
-        }
-    }, [user, toast, clearCache]);
-
-    const isBookmarked = useCallback((verseKey: string) => {
-        return bookmarks.some(b => b.verse_key === verseKey);
-    }, [bookmarks]);
-
 
 
     // To properly fix, we need to implement the function using functional updates only or Refs.
@@ -319,13 +237,28 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
                 );
             }
 
-            // 2. Track Unique Verses Read
+            // 2. Track Unique Verses Read & Read Counts
+            let newUniqueCount = 0;
             if (uniqueList.length > 0) {
-                const upsertData = uniqueList.map(vKey => ({
-                    user_id: user.id,
-                    verse_key: vKey,
-                    read_count: 1 // Default if new, won't easily increment on Conflict without RPC
-                }));
+                // Fetch existing records for the verses we are syncing
+                const { data: existingVerses } = await supabase
+                    .from('verses_read')
+                    .select('verse_key, read_count')
+                    .eq('user_id', user.id)
+                    .in('verse_key', uniqueList);
+                
+                const existingMap = new Map(existingVerses?.map(v => [v.verse_key, v.read_count]) || []);
+                
+                const upsertData = uniqueList.map(vKey => {
+                    const currentCount = existingMap.get(vKey) || 0;
+                    if (currentCount === 0) newUniqueCount++;
+                    return {
+                        user_id: user.id,
+                        verse_key: vKey,
+                        read_count: currentCount + 1
+                    };
+                });
+
                 await supabase.from('verses_read').upsert(upsertData, { onConflict: 'user_id, verse_key' });
             }
 
@@ -347,7 +280,7 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
             // 4. Update Main Profile Stats
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('total_ayahs_read, current_streak, last_active_date')
+                .select('total_ayahs_read, unique_ayahs_read, current_streak, last_active_date')
                 .eq('id', user.id)
                 .single();
 
@@ -364,6 +297,7 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
 
                 await supabase.from('profiles').update({
                     total_ayahs_read: (profile.total_ayahs_read || 0) + totalToSync,
+                    unique_ayahs_read: (profile.unique_ayahs_read || 0) + newUniqueCount,
                     current_streak: newStreak,
                     last_active_date: new Date().toISOString()
                 }).eq('id', user.id);
@@ -392,6 +326,13 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
             clearInterval(interval);
             // Final attempt to flush on unmount/close
             if (pendingStatsRef.current.hasChanges) flushToSupabase();
+            
+            // Clean up any pending mark sync timeouts
+            if (pendingMarksSyncRef.current) {
+                pendingMarksSyncRef.current.forEach(item => {
+                    clearTimeout(item.timer);
+                });
+            }
         };
     }, [flushToSupabase]);
 
@@ -451,36 +392,68 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
             return;
         }
 
+        const key = `${type}:${surahId}:${ayahId}`;
         const existingMark = marks.find(m => 
             m.surah_id === surahId && 
             m.ayah_id === ayahId && 
             m.type === type
         );
 
+        // Cancel any pending timer for this mark
+        const pending = pendingMarksSyncRef.current.get(key);
+        if (pending) {
+            clearTimeout(pending.timer);
+            pendingMarksSyncRef.current.delete(key);
+
+            // Revert state back to original local UI representation
+            if (pending.type === 'add') {
+                // Was not in DB, we scheduled add, now we remove it locally
+                setMarks(prev => prev.filter(m => m.id !== pending.tempId));
+            } else {
+                // Was in DB, we scheduled remove, now we put it back locally
+                if (pending.originalMark) {
+                    setMarks(prev => [pending.originalMark!, ...prev]);
+                }
+            }
+            return;
+        }
+
         if (existingMark) {
             // Remove mark (Optimistic)
             setMarks(prev => prev.filter(m => m.id !== existingMark.id));
-            try {
-                const { error } = await supabase
-                    .from('marks')
-                    .delete()
-                    .eq('id', existingMark.id);
-                if (error) throw error;
-                clearCache();
-            } catch (error) {
-                console.error('Error removing mark:', error);
-                setMarks(prev => [...prev, existingMark]); // Revert
-            }
+            
+            // Set 2-second debounce for deleting from DB
+            const timer = setTimeout(async () => {
+                pendingMarksSyncRef.current.delete(key);
+                try {
+                    const { error } = await supabase
+                        .from('marks')
+                        .delete()
+                        .eq('id', existingMark.id);
+                    if (error) throw error;
+                    clearCache();
+                } catch (error) {
+                    console.error('Error removing mark:', error);
+                    // Revert state
+                    setMarks(prev => [existingMark, ...prev]);
+                    toast({ variant: "destructive", title: "Error", description: "Failed to remove mark." });
+                }
+            }, 2000);
+
+            pendingMarksSyncRef.current.set(key, {
+                timer,
+                type: 'remove',
+                existingId: existingMark.id,
+                originalMark: existingMark
+            });
         } else {
             // Add mark (Optimistic)
             
             // Check for exclusivity conflicts
             let markToReplace: Mark | undefined;
             if (type === 'surah') {
-                // Exclusive Global Surah Mark
                 markToReplace = marks.find(m => m.type === 'surah');
             } else if (type === 'ayah') {
-                // Exclusive Ayah Mark Per Surah
                 markToReplace = marks.find(m => m.type === 'ayah' && m.surah_id === surahId);
             }
 
@@ -502,45 +475,50 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
                 return [newMark, ...filtered];
             });
 
-            try {
-                // DB Cleanup for collisions (Aggressive - based on DB rules, not just state)
-                if (type === 'surah') {
-                    // One surah mark globally
-                    await supabase.from('marks').delete().eq('user_id', user.id).eq('type', 'surah');
-                } else if (type === 'ayah') {
-                    // One ayah mark per surah
-                    await supabase.from('marks').delete().eq('user_id', user.id).eq('type', 'ayah').eq('surah_id', surahId);
-                }
+            // Set 2-second debounce for writing to DB
+            const timer = setTimeout(async () => {
+                pendingMarksSyncRef.current.delete(key);
+                try {
+                    // DB Cleanup for collisions
+                    if (type === 'surah') {
+                        await supabase.from('marks').delete().eq('user_id', user.id).eq('type', 'surah');
+                    } else if (type === 'ayah') {
+                        await supabase.from('marks').delete().eq('user_id', user.id).eq('type', 'ayah').eq('surah_id', surahId);
+                    }
 
-                // DB Insert
-                const { data, error } = await supabase
-                    .from('marks')
-                    .insert({ 
-                        user_id: user.id, 
-                        surah_id: surahId, 
-                        ayah_id: ayahId, 
-                        type 
-                    })
-                    .select()
-                    .single();
+                    // DB Insert
+                    const { data, error } = await supabase
+                        .from('marks')
+                        .insert({ 
+                            user_id: user.id, 
+                            surah_id: surahId, 
+                            ayah_id: ayahId, 
+                            type 
+                        })
+                        .select()
+                        .single();
+                        
+                    if (error) throw error;
                     
-                if (error) {
-                    console.error('Supabase Mark Insert Error:', error);
-                    throw error;
+                    // Replace temp with real
+                    setMarks(prev => prev.map(m => m.id === tempId ? data : m));
+                    clearCache();
+                } catch (error: any) {
+                    console.error('Final Mark Update Error:', error);
+                    fetchUserData(); // Re-sync with DB on failure
+                    toast({ 
+                        variant: "destructive", 
+                        title: "Error", 
+                        description: error.message || "Failed to update marks." 
+                    });
                 }
-                
-                // Replace temp with real
-                setMarks(prev => prev.map(m => m.id === tempId ? data : m));
-                clearCache();
-            } catch (error: any) {
-                console.error('Final Mark Update Error:', error);
-                fetchUserData(); // Re-sync with DB on failure
-                toast({ 
-                    variant: "destructive", 
-                    title: "Error", 
-                    description: error.message || "Failed to update marks." 
-                });
-            }
+            }, 2000);
+
+            pendingMarksSyncRef.current.set(key, {
+                timer,
+                type: 'add',
+                tempId
+            });
         }
     }, [user, marks, toast, clearCache]);
 
@@ -553,19 +531,15 @@ export const BookmarksProvider = ({ children }: { children: React.ReactNode }) =
     }, [marks]);
 
     const value = React.useMemo(() => ({
-        bookmarks,
         readingHistory,
         marks,
         userStats,
         dailyActivity,
         isLoading,
-        addBookmark,
-        removeBookmark,
-        isBookmarked,
         updateReadingHistory: updateReadingHistoryStable,
         toggleMark,
         isMarked
-    }), [bookmarks, readingHistory, marks, userStats, dailyActivity, isLoading, addBookmark, removeBookmark, isBookmarked, updateReadingHistoryStable, toggleMark, isMarked]);
+    }), [readingHistory, marks, userStats, dailyActivity, isLoading, updateReadingHistoryStable, toggleMark, isMarked]);
 
     return (
         <BookmarksContext.Provider value={value}>

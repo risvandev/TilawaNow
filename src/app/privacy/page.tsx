@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Clock } from "lucide-react";
+import { useSmartBack } from "@/hooks/use-smart-back";
 
 /**
  * Privacy Policy - Ultra Minimal Industrial Style
@@ -9,20 +10,21 @@ import { ChevronLeft, Clock } from "lucide-react";
  */
 const PrivacyPolicy = () => {
   const router = useRouter();
+  const handleBack = useSmartBack("/home");
   const effectiveDate = "April 9, 2026";
 
   return (
-    <div className="min-h-screen bg-background pt-32 pb-40 selection:bg-primary/10">
+    <div className="min-h-screen bg-background pt-6 md:pt-32 pb-20 md:pb-40 selection:bg-primary/10">
       <div className="container mx-auto px-6 max-w-2xl">
         <button
-          onClick={() => router.back()}
-          className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors mb-20"
+          onClick={handleBack}
+          className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors mb-6 md:mb-20"
         >
           <ChevronLeft className="w-3 h-3 transition-transform group-hover:-translate-x-1" />
           Back
         </button>
 
-        <header className="mb-24">
+        <header className="mb-8 md:mb-24">
           <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-8">Privacy Policy.</h1>
           <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground uppercase bg-muted/50 w-fit px-4 py-2 rounded-md border border-border/50">
             <Clock className="w-3 h-3" />
@@ -88,7 +90,7 @@ const PrivacyPolicy = () => {
                 <li>Khatmah progress</li>
                 <li>Search queries</li>
                 <li>AI chat inputs</li>
-                <li>Saved preferences</li>
+                <li>Saved preferences (stored locally on your device)</li>
               </ul>
             </div>
 

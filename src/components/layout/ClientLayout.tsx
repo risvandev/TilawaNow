@@ -11,7 +11,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuth();
   
-  const pagesWithoutSidebar = ["/", "/privacy", "/terms", "/login", "/signup", "/forgot-password", "/reset-password"];
+  const pagesWithoutSidebar = ["/", "/privacy", "/terms", "/account", "/forgot-password", "/reset-password", "/donate"];
 
   let showSidebar = !pagesWithoutSidebar.includes(pathname);
 
@@ -20,8 +20,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     showSidebar = false;
   }
 
-  // Hide entirely if it starts with read/story or info, if you don't want sidebar there
-  if (pathname.startsWith("/info/") || pathname.startsWith("/story/")) {
+  // Hide entirely if it starts with read/explained or info, if you don't want sidebar there
+  if (pathname.startsWith("/info/") || pathname.startsWith("/explained/")) {
     showSidebar = false;
   }
 

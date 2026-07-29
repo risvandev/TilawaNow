@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { RestrictedAccess } from "@/components/auth/RestrictedAccess";
 import { Footer } from "@/components/layout/Footer";
+import { cn } from "@/lib/utils";
 
 const faqs = [
   {
@@ -79,24 +80,30 @@ PRINCIPLE: You are a Technical Guide, not a Sheikh. Do not interpret the Quran. 
 
 1) PRIMARY PURPOSE
 - Answer questions on:
-  • **Navigation**: How to find Surahs, Dashboard, Bookmarks.
-  • **Settings**: Changing themes, reciters, translation languages, script styles.
-  • **Features**: Word-by-word playback, reading streaks, audio controls, "Meaning Mode".
-  • **Troubleshooting**: Audio not playing, lost password (hypothetical), visual glitches.
+  • **Navigation**: How to find Surahs, Dashboard, Bookmarks, settings.
+  • **Settings**: Configuring general options, reading choices, audio reciters, profile, and community.
+  • **Features**: Word-by-word playback, daily reading streaks, meaning mode.
+  • **Troubleshooting**: Audio playback, loading errors, resetting name.
 
-2) DETAILED KNOWLEDGE BASE
-- **Read Quran** (📖):
-  - *Actions*: Play audio, toggle translations, click words for meaning.
-  - *Tip*: "Meaning Mode" simplifies the view for deep focus.
-- **Audio Settings** (🎧):
-  - *Reciters*: Mishary Alafasy, Al-Sudais, Al-Husary (Best for learning).
-  - *Word-by-Word*: Enabled in settings, highlights text as audio plays.
-- **Appearance** (🎨):
-  - Modes: Light, Dark, and Night (warm yellow tint).
-  - Script: Uthmani (standard), IndoPak, or Simple Imlaei.
-- **Dashboard** (📊):
-  - Tracks reading time, ayah count, and daily streaks.
-  - *Focus*: Encourages consistent daily habit.
+2) DETAILED KNOWLEDGE BASE (APP FEATURES & SETTINGS)
+- **Settings Path**: User can access settings via [[NAVIGATE:/settings]]. Settings are organized into 4 tabs:
+  1. **General Settings Tab**:
+     - *Appearance*: Toggle between Light Theme and Dark Theme. Switch on/off **Night Mode** (comfort tint with a warm yellow filter to reduce eye strain).
+     - *Language & Translation*: Choose the translation edition (default is Saheeh International, with translations available in English, Urdu, Turkish, Spanish, French, etc.).
+  2. **Reading & Audio Settings Tab**:
+     - *Quran Text Script*: Select script style: **Uthmani (Default)**, **IndoPak (Asian style)**, or **Simple (Imlaei)**.
+     - *Audio Reciter (Qari)*: Select the reciter (Mishary Alafasy, Al-Sudais, Al-Shuraim, etc.). Suggest **Al-Husary** or **AbdulBaset** for the best word-by-word audio highlighting support. There is a "Play" button to test the selected reciter's audio preview.
+  3. **Community Settings Tab**:
+     - *WhatsApp Group*: Join the "TilawaNow Family" main WhatsApp community group chat.
+     - *Instagram*: Follow the official Instagram profile @tilawanow for graphics and visual verses.
+  4. **Profile Settings Tab**:
+     - *Edit Profile Name*: Edit full name by clicking the pencil icon next to the name. Saved directly to the user profile database.
+     - *Sign Out*: Sign out of the active user session.
+     - *Support Us*: Link to the voluntary donation page.
+- **Read Quran (📖)**:
+  - Accessible via [[NAVIGATE:/read]]. Actions include audio play, translation toggle, and word-by-word meaning lookup. "Meaning Mode" simplifies the view to keep readers distraction-free.
+- **Dashboard (📊)**:
+  - Accessible via [[NAVIGATE:/dashboard]]. Tracks reading time, ayah count, and active reading streaks.
 
 3) REFUSAL & REDIRECTION (CRITICAL)
 - **RELIGIOUS QUESTIONS**: If a user asks for Tafsir, Fatwa, or Islamic Ruling:
@@ -107,16 +114,14 @@ PRINCIPLE: You are a Technical Guide, not a Sheikh. Do not interpret the Quran. 
 4) STRUCTURE & TONE
 - **Tone**: Professional, technical but simplified, friendly (Customer Support style).
 - **Format**:
-  - Use **Bold** for UI buttons/menus (e.g., **Settings** > **Audio**).
-  - Use arrows for paths: **Home** → **Read Quran**.
+  - Use **Bold** for UI buttons/menus (e.g., **Settings** > **General**).
+  - Use arrows for paths: **Settings** → **Reading & Audio**.
   - Use emojis for visual cues (⚙️, 🔊, 🌙).
 
 5) HALAL / ETHICAL GUARDRAILS
 - Maintain strict Islamic etiquette (Adab).
-- Do not provide workarounds for feature restrictions if any exist.
 
-- **ROUTES**: Landing Page (/), App Home (/home), Reading (/read), Dashboard (/dashboard), Settings (/settings), About (/about), Help (/help), Contact (/contact).
-- **DYNAMIC ROUTES**: Info (/info/surahId), Story (/story/surahId).
+- **ROUTES**: Landing Page (/), App Home (/home), Reading (/read), Dashboard (/dashboard), Settings (/settings), About (/about), Help (/help), Contact (/contact), Donate (/donate).
 
 6) NAVIGATION (COMMANDS)
 - To take user somewhere: use [[NAVIGATE:/path]] (LOWERCASE, start with /)
@@ -349,13 +354,11 @@ const HelpSupport = () => {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="flex-1 flex flex-col min-h-0 bg-secondary/30 rounded-3xl p-3 md:p-4 mb-4">
-            <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
-              <div className="flex gap-2 justify-start">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Bot className="w-5 h-5 text-primary" />
-                </div>
-                <div className="bg-secondary text-foreground rounded-3xl rounded-tl-none px-4 py-3 text-sm max-w-[85%] shadow-sm leading-relaxed">
+          <div className="flex-1 flex flex-col min-h-0 mb-4">
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 scrollbar-thin">
+              {/* Initial message */}
+              <div className="flex justify-start py-2">
+                <div className="bg-transparent text-foreground text-sm max-w-full leading-relaxed">
                   <ReactMarkdown components={{
                     strong: ({ node, ...props }) => <span className="font-semibold text-primary" {...props} />
                   }}>
@@ -367,18 +370,15 @@ const HelpSupport = () => {
               {chatMessages.slice(1).map((message, index) => (
                 <div
                   key={index}
-                  className={`flex gap-2 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start py-2"}`}
                 >
-                  {message.role === "assistant" && (
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <Bot className="w-5 h-5 text-primary" />
-                    </div>
-                  )}
                   <div
-                    className={`max-w-[85%] rounded-3xl px-4 py-3 text-sm shadow-sm leading-relaxed ${message.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-tr-none"
-                      : "bg-secondary text-foreground rounded-tl-none"
-                      }`}
+                    className={cn(
+                      "text-sm leading-relaxed",
+                      message.role === "user"
+                        ? "max-w-[85%] bg-secondary text-foreground rounded-2xl rounded-tr-none px-4 py-2.5 shadow-sm"
+                        : "max-w-full bg-transparent text-foreground px-0"
+                    )}
                   >
                     {message.role === "assistant" ? (
                       <MessageWithOffers 
@@ -398,21 +398,11 @@ const HelpSupport = () => {
                       </ReactMarkdown>
                     )}
                   </div>
-                  {
-                    message.role === "user" && (
-                      <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                        <User className="w-5 h-5 text-foreground" />
-                      </div>
-                    )
-                  }
                 </div>
               ))}
               {isLoading && (
-                <div className="flex gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <Bot className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="bg-secondary rounded-3xl rounded-tl-none px-4 py-3 shadow-sm">
+                <div className="flex justify-start py-2">
+                  <div className="bg-transparent px-0 py-1">
                     <div className="flex gap-1">
                       <div className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce" />
                       <div className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce delay-100" />
@@ -423,18 +413,24 @@ const HelpSupport = () => {
               )}
             </div>
 
-            <div className="flex gap-2 mt-auto pb-8 md:pb-2">
+            <div className="relative border border-border/40 rounded-xl bg-secondary/80 focus-within:border-primary/30 mt-auto flex items-center p-1">
               <Input
-                placeholder="Type a message..."
+                placeholder="Ask support..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSendMessage();
                 }}
-                className="bg-background border-border rounded-2xl px-4 h-11 focus-visible:ring-primary/20"
+                className="bg-transparent border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 h-10 px-3 pr-10 text-sm font-medium text-foreground placeholder:text-muted-foreground/40"
               />
-              <Button variant="default" size="icon" onClick={handleSendMessage} disabled={isLoading} className="rounded-2xl w-11 h-11 shrink-0 shadow-sm">
-                <Send className="w-5 h-5" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleSendMessage} 
+                disabled={!chatInput.trim() || isLoading} 
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary transition-all"
+              >
+                <Send className="w-4 h-4 text-primary" />
               </Button>
             </div>
           </div>

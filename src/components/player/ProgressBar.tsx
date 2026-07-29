@@ -10,6 +10,7 @@ interface ProgressBarProps {
     onSeek: (time: number) => void;
     className?: string;
     compact?: boolean;
+    showTimes?: boolean;
 }
 
 const formatTime = (seconds: number): string => {
@@ -25,13 +26,14 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     onSeek,
     className,
     compact = false,
+    showTimes = true,
 }) => {
     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
     return (
         <div className={cn("player-progress group/progress", className)}>
             <div className={cn("flex items-center gap-2 w-full", compact ? "gap-1.5" : "gap-3")}>
-                {!compact && (
+                {showTimes && !compact && (
                     <span className="text-[10px] md:text-xs text-muted-foreground tabular-nums font-medium min-w-[32px] text-right select-none">
                         {formatTime(currentTime)}
                     </span>
@@ -58,13 +60,13 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
                         )}
                     />
                 </div>
-                {!compact && (
+                {showTimes && !compact && (
                     <span className="text-[10px] md:text-xs text-muted-foreground tabular-nums font-medium min-w-[32px] select-none">
                         {formatTime(duration)}
                     </span>
                 )}
             </div>
-            {compact && (
+            {showTimes && compact && (
                 <div className="flex justify-between mt-0.5 px-0.5">
                     <span className="text-[9px] text-muted-foreground/70 tabular-nums select-none">
                         {formatTime(currentTime)}

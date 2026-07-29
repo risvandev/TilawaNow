@@ -70,6 +70,10 @@ export default {
           DEFAULT: "hsl(var(--cta-background))",
           foreground: "hsl(var(--cta-foreground))",
         },
+        "premium-accent": {
+          DEFAULT: "hsl(var(--premium-accent))",
+          foreground: "hsl(var(--premium-accent-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -114,8 +118,8 @@ export default {
           "50%": { transform: "translateY(-10px)" },
         },
         "pulse-glow": {
-          "0%, 100%": { boxShadow: "0 0 20px hsl(210 35% 55% / 0.2)" },
-          "50%": { boxShadow: "0 0 40px hsl(210 35% 55% / 0.4)" },
+          "0%, 100%": { boxShadow: "0 0 20px hsl(var(--primary) / 0.2)" },
+          "50%": { boxShadow: "0 0 40px hsl(var(--primary) / 0.4)" },
         },
         "shimmer": {
           "0%": { backgroundPosition: "-200% 0" },
@@ -144,7 +148,7 @@ export default {
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-surface": "linear-gradient(180deg, hsl(230 15% 10%), hsl(230 15% 6%))",
-        "gradient-accent": "linear-gradient(135deg, hsl(210 35% 55%), hsl(175 30% 55%))",
+        "gradient-accent": "var(--gradient-accent)",
       },
     },
   },

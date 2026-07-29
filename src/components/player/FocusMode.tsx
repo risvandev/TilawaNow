@@ -32,11 +32,16 @@ const FocusMode: React.FC = () => {
         seek,
         currentIndex,
         playlist,
-        playSurah
+        playSurah,
+        surahCurrentTime,
+        surahDuration,
+        seekSurah
     } = useAudioPlayer();
 
     const scrollContainerRef = React.useRef<HTMLDivElement>(null);
     const [bgImage, setBgImage] = React.useState<string>("");
+    const [prevImage, setPrevImage] = React.useState<string>("");
+    const [fadeState, setFadeState] = React.useState<"idle" | "fading">("idle");
     const [imageIndex, setImageIndex] = React.useState<number>(0);
 
     // Sequence through images on every Ayah change
@@ -44,10 +49,25 @@ const FocusMode: React.FC = () => {
         if (isFocusMode && currentVerseKey) {
             // Cycle through focus (2).jpg to focus (21).jpg
             const nextIndex = (imageIndex % 20) + 2;
-            setBgImage(`/focus_mod_images/focus (${nextIndex}).webp`);
+            const newImg = `/focus_mod_images/focus (${nextIndex}).webp`;
+            
+            if (bgImage) {
+                setPrevImage(bgImage);
+                setBgImage(newImg);
+                setFadeState("fading");
+            } else {
+                setBgImage(newImg);
+            }
             setImageIndex(prev => prev + 1);
         }
     }, [isFocusMode, currentVerseKey]);
+
+    const handleImageLoad = () => {
+        // Small delay to ensure the browser registers opacity-0 before animating
+        setTimeout(() => {
+            setFadeState("idle");
+        }, 50);
+    };
 
     // Prevent body scroll when Focus Mode is active
     useEffect(() => {
@@ -93,16 +113,35 @@ const FocusMode: React.FC = () => {
             )}
         >
             {/* Immersive Background Crossfade */}
-            {bgImage && (
-                <div key={bgImage} className="absolute inset-0 -z-10 animate-fade-in duration-1000">
-                    <img
-                        src={bgImage}
-                        alt=""
-                        className="w-full h-full object-cover blur-[10px] scale-110 brightness-[0.6]"
-                    />
-                    <div className="absolute inset-0 bg-black/40" />
-                </div>
-            )}
+            <div className="absolute inset-0 -z-10 overflow-hidden">
+                {prevImage && (
+                    <div className="absolute inset-0 opacity-100">
+                        <img
+                            src={prevImage}
+                            alt=""
+                            className="w-full h-full object-cover blur-[10px] scale-110 brightness-[0.4]"
+                        />
+                    </div>
+                )}
+                {bgImage && (
+                    <div 
+                        key={bgImage}
+                        className={cn(
+                            "absolute inset-0 transition-opacity ease-in-out",
+                            fadeState === "fading" ? "opacity-0" : "opacity-100"
+                        )}
+                        style={{ transitionDuration: '3000ms' }}
+                    >
+                        <img
+                            src={bgImage}
+                            alt=""
+                            onLoad={handleImageLoad}
+                            className="w-full h-full object-cover blur-[10px] scale-110 brightness-[0.4]"
+                        />
+                    </div>
+                )}
+                <div className="absolute inset-0 bg-black/60" />
+            </div>
 
             {/* Top Bar - Minimal */}
             <div className="w-full px-6 py-4 flex items-center justify-between opacity-60 hover:opacity-100 transition-opacity z-10">
@@ -122,14 +161,6 @@ const FocusMode: React.FC = () => {
 
                 <div className="flex items-center gap-4">
                     <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handlePlayFull}
-                        className="h-7 px-3 text-[10px] uppercase tracking-wider font-bold rounded-full border-primary/20 hover:bg-primary/10 text-primary transition-all"
-                    >
-                        Play Full
-                    </Button>
-                    <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => {
@@ -145,25 +176,11 @@ const FocusMode: React.FC = () => {
                 </div>
             </div>
 
-            {/* Main Content - Centered Stage with Scroll */}
             <div
                 ref={scrollContainerRef}
                 className="flex-1 w-full overflow-y-auto scrollbar-none px-6"
             >
                 <div className="min-h-full flex flex-col items-center py-[20vh] max-w-4xl mx-auto">
-                    {/* Surah Progress Indicator */}
-                    <div className="w-full max-w-md mb-12 flex flex-col items-center gap-2 opacity-40 hover:opacity-100 transition-opacity">
-                        <div className="w-full h-1 bg-primary/5 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-primary/40 transition-all duration-1000 ease-out"
-                                style={{ width: `${surahProgress}%` }}
-                            />
-                        </div>
-                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">
-                            Surah Progress: Ayah {currentIndex + 1} / {playlist.length}
-                        </span>
-                    </div>
-
                     <div className="w-full flex flex-col items-center gap-10 md:gap-16">
                         {/* Arabic Verse */}
                         <div
@@ -182,7 +199,7 @@ const FocusMode: React.FC = () => {
                                                     id={isHighlighted ? "active-word-focus" : undefined}
                                                     className={cn(
                                                         "transition-all duration-300 inline-block px-1",
-                                                        isHighlighted ? "text-primary scale-110 drop-shadow-[0_0_8px_rgba(var(--primary),0.4)] font-bold" : "opacity-80"
+                                                        isHighlighted ? "text-primary scale-110 drop-shadow-[0_0_12px_hsl(var(--primary)/0.5)]" : "opacity-80"
                                                     )}
                                                 >
                                                     {w.text_uthmani || (w as any).text || ""}
@@ -212,9 +229,10 @@ const FocusMode: React.FC = () => {
                 {/* Progress Bar */}
                 <div className="w-full scale-90 md:scale-100">
                     <ProgressBar
-                        currentTime={currentTime}
-                        duration={duration}
-                        onSeek={seek}
+                        currentTime={surahCurrentTime}
+                        duration={surahDuration}
+                        onSeek={seekSurah}
+                        showTimes={false}
                     />
                 </div>
 
@@ -252,15 +270,6 @@ const FocusMode: React.FC = () => {
                         <SkipForward className="w-5 h-5" />
                     </Button>
                 </div>
-
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={togglePlay}
-                    className="mt-2 text-[9px] uppercase tracking-widest font-bold opacity-40 hover:opacity-100 transition-opacity"
-                >
-                    {isPlaying ? "Reading in Progress..." : "Continue Reading"}
-                </Button>
             </div>
         </div>
     );

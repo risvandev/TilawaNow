@@ -102,11 +102,15 @@ TilawaNow relies on a structured Supabase database for authentication, performan
 5.  Paste into the editor and click **Run**.
 
 #### Key Tables Created:
-- `profiles` → Core user data and preferences.
+- `profiles` → Core user data.
 - `reading_sessions` → High-level session tracking.
 - `reading_activity` → Granular, ayah-level interaction data.
 
 > Row Level Security (RLS) is enabled by default in the script. Failure to run this will result in `403 Forbidden` or `Empty Result` errors across the application.
+
+#### Advanced Features Setup:
+If you plan to use the Leaderboard feature, you will also need to run its setup script in the Supabase SQL Editor:
+- **Leaderboard**: Run the `scripts/setup_leaderboard.sql` file. This creates a secure RPC function to safely rank users without exposing personal data.
 
 ### 📧 SMTP Setup (Optional)
 This is required specifically for the **Contact Form** and **Invite** features. (Note: Supabase Auth emails are managed separately in the Supabase Dashboard).

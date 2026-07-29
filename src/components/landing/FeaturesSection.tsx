@@ -1,87 +1,104 @@
-import {
-  Headphones,
-  Languages,
-  Search,
-  BookMarked,
-  Sparkles,
-  Clock,
-} from "lucide-react";
-import BorderGlow from "@/components/ui/BorderGlow";
+import Link from "next/link";
+import { ArrowRight, BookOpen, Sun, Sparkles } from "lucide-react";
 
-const features = [
+const popularAyahs = [
   {
-    icon: BookMarked,
-    title: "Complete Quran",
-    description: "Access all 114 surahs with beautiful Arabic typography and multiple translations.",
+    icon: BookOpen,
+    surahName: "Al-Baqarah",
+    reference: "2:255",
+    surahId: 2,
+    ayahId: 255,
+    arabic: "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ...",
+    translation: "Allah! There is no deity except Him, the Ever-Living, the Sustainer of all existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth...",
+    tag: "Ayat al-Kursi (The Throne Verse)"
   },
   {
-    icon: Headphones,
-    title: "Audio Recitation",
-    description: "Listen to professional reciters with verse-by-verse audio playback.",
-  },
-  {
-    icon: Languages,
-    title: "Multiple Languages",
-    description: "Understand the meaning with translations in various languages.",
-  },
-  {
-    icon: Search,
-    title: "Smart Search",
-    description: "Find any verse or topic quickly with our powerful search feature.",
+    icon: Sun,
+    surahName: "An-Nur",
+    reference: "24:35",
+    surahId: 24,
+    ayahId: 35,
+    arabic: "اللَّهُ نُورُ السَّمَاوَاتِ وَالْأَرْضِ ۚ مَثَلُ نُورِهِ كَمِشْكَاةٍ فِيهَا مِصْبَاحٌ ۖ الْمِصْبَاحُ فِي زُجَاجَةٍ...",
+    translation: "Allah is the Light of the heavens and the earth. The example of His light is like a niche within which is a lamp; the lamp is within glass...",
+    tag: "Ayat an-Nur (The Verse of Light)"
   },
   {
     icon: Sparkles,
-    title: "AI Assistance",
-    description: "Get help understanding verses with our intelligent AI assistant.",
-  },
-  {
-    icon: Clock,
-    title: "Progress Tracking",
-    description: "Track your reading progress and build a consistent daily habit.",
-  },
+    surahName: "Ash-Sharh",
+    reference: "94:5-6",
+    surahId: 94,
+    ayahId: 5,
+    arabic: "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا • إِنَّ مَعَ الْعُسْرِ يُسْرًا",
+    translation: "For indeed, with hardship comes ease. Indeed, with hardship comes ease.",
+    tag: "Ayat al-Yusr (The Verse of Ease)"
+  }
 ];
 
 export const FeaturesSection = () => {
   return (
-    <section className="py-20 relative overflow-hidden bg-background">
-      <div className="container relative z-10 mx-auto px-6">
+    <section className="pt-8 pb-16 md:py-20 relative overflow-hidden bg-background">
+      <div className="container relative z-10 mx-auto px-6 max-w-6xl">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4">
-            Everything You Need
+        <div className="text-center mb-16">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-premium-accent">
+            Words of Wisdom
+          </span>
+          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-foreground/90 mt-1 uppercase tracking-[0.08em]">
+            Popular Verses for Reflection
           </h2>
-          <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-            A comprehensive platform designed to help you connect deeply with the Holy Quran.
+          <p className="text-sm text-muted-foreground/60 max-w-lg mx-auto mt-2">
+            Timeless verses of divine guidance, spiritual light, and absolute comfort.
           </p>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <BorderGlow
-              key={feature.title}
-              className="opacity-0 animate-fade-in-up group h-full"
+        {/* Ayah Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {popularAyahs.map((ayah, index) => (
+            <Link
+              key={ayah.reference}
+              href={`/read/${ayah.surahId}?ayah=${ayah.ayahId}`}
+              className="opacity-0 animate-fade-in-up group bg-card/30 hover:bg-card/55 border border-border/60 hover:border-primary/45 rounded-3xl p-6 flex flex-col justify-between hover:shadow-2xl hover:shadow-black/40 transition-all duration-300 relative overflow-hidden cursor-pointer"
               style={{ 
-                animationDelay: `${index * 100}ms`, 
+                animationDelay: `${index * 150}ms`, 
                 animationFillMode: "forwards"
               }}
-              backgroundColor="hsl(var(--card))"
-              glowColor="210 35 55"
-              borderRadius={16}
-              glowRadius={30}
-              edgeSensitivity={30}
-              colors={['#5c8fcc', '#7ab8ad', '#5c8fcc']}
             >
-              <div className="p-6 h-full flex flex-col items-start">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110">
-                  <feature.icon className="w-6 h-6 text-primary" />
+              {/* Header inside Card */}
+              <div>
+                <div className="flex items-center justify-between border-b border-border/40 pb-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <ayah.icon className="w-4 h-4 text-primary/70 group-hover:text-primary transition-colors" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                      {ayah.surahName} • {ayah.reference}
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-semibold text-primary/60 bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                    {ayah.ayahId === 5 ? "Ayah 5-6" : `Ayah ${ayah.ayahId}`}
+                  </span>
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {feature.description}
+
+                {/* Tag label */}
+                <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-muted-foreground/40 mb-3">
+                  {ayah.tag}
+                </div>
+
+                {/* Arabic Text */}
+                <p className="font-arabic text-xl md:text-2xl text-foreground/90 group-hover:text-foreground text-right leading-relaxed mb-6 select-none" dir="rtl">
+                  {ayah.arabic}
                 </p>
               </div>
-            </BorderGlow>
+
+              {/* Translation and Action */}
+              <div>
+                <p className="text-xs text-muted-foreground/75 leading-relaxed italic mb-6">
+                  "{ayah.translation}"
+                </p>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-primary group-hover:text-primary-foreground group-hover:translate-x-1 transition-all">
+                  <span>Read Verse Context</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </div>
+              </div>
+            </Link>
           ))}
         </div>
       </div>

@@ -8,6 +8,7 @@
 
 import { HeroSection } from "@/components/landing/HeroSection";
 import { StatsSection } from "@/components/landing/StatsSection";
+import { PopularSurahsSection } from "@/components/landing/PopularSurahsSection";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { QuickStartSection } from "@/components/landing/QuickStartSection";
 import { HighlightedAyahSection } from "@/components/landing/HighlightedAyahSection";
@@ -18,9 +19,10 @@ import { Footer } from "@/components/layout/Footer";
 
 const Landing = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="theme-premium-gray min-h-screen bg-background">
       <HeroSection />
       <StatsSection />
+      <PopularSurahsSection />
       <FeaturesSection />
       <QuickStartSection />
       <HighlightedAyahSection />
