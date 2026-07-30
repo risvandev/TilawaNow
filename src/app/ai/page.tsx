@@ -545,7 +545,7 @@ const AIAssistance = () => {
   return (
     <TooltipProvider>
       <div className={cn(
-        "transition-all duration-700 relative",
+        "transition-all duration-700 relative overflow-x-clip",
         showOnboarding ? "min-h-[80vh] flex flex-col items-center justify-center pt-0 pb-0 px-4" :
         messages.length === 0 ? "h-screen overflow-hidden pt-0" : "min-h-screen pt-4 md:pt-16 pb-40"
       )}>
@@ -931,7 +931,7 @@ const AIAssistance = () => {
                   )}>
                     {/* Invisible ghost element that grows natively with text wrap */}
                     <div 
-                      className="col-start-1 row-start-1 invisible whitespace-pre-wrap break-words min-h-[36px] max-h-[160px] w-full py-1.5 px-1 md:py-2 text-sm md:text-base leading-relaxed"
+                      className="col-start-1 row-start-1 invisible whitespace-pre-wrap break-words min-h-[36px] max-h-[160px] w-full py-1.5 px-1 md:py-2 text-base leading-relaxed"
                       aria-hidden="true"
                     >
                       {input + ' '}
@@ -950,7 +950,7 @@ const AIAssistance = () => {
                           handleSend();
                         }
                       }}
-                      className="col-start-1 row-start-1 h-full min-h-[36px] max-h-[160px] w-full bg-transparent border-0 border-none shadow-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus:outline-none resize-none py-1.5 px-1 md:py-2 text-sm md:text-base text-foreground font-medium placeholder:text-muted-foreground/40 disabled:opacity-50 leading-relaxed scrollbar-hide overflow-hidden will-change-[height]"
+                      className="col-start-1 row-start-1 h-full min-h-[36px] max-h-[160px] w-full bg-transparent border-0 border-none shadow-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus:outline-none resize-none py-1.5 px-1 md:py-2 text-base text-foreground font-medium placeholder:text-muted-foreground/40 disabled:opacity-50 leading-relaxed scrollbar-hide overflow-hidden will-change-[height]"
                     />
                   </div>
 
