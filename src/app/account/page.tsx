@@ -63,7 +63,7 @@ const Login = () => {
     };
 
     return (
-        <div className="relative min-h-screen bg-background flex flex-col items-center justify-center p-4 md:p-8 overflow-hidden font-sans">
+        <div className="relative min-h-screen bg-background flex flex-col items-center justify-center p-4 md:p-8 overflow-x-clip font-sans">
             {/* Ambient Mac-like Glows */}
             <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[140px] pointer-events-none opacity-60 mix-blend-screen z-0" />
             <div className="absolute top-[30%] right-[-10%] w-[40%] h-[40%] rounded-full bg-premium-accent/10 blur-[140px] pointer-events-none opacity-50 mix-blend-screen z-0" />

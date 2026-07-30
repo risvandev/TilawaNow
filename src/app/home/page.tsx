@@ -69,7 +69,7 @@ const Home = () => {
   const glassPanelClass = "md:bg-secondary/40 md:backdrop-blur-3xl md:border md:border-white/[0.08] md:shadow-2xl md:shadow-black/40 md:rounded-[2rem] md:p-6 p-4 border-none bg-transparent rounded-none relative transition-all duration-500 group md:hover:bg-secondary/50 md:hover:border-white/[0.12]";
 
   return (
-    <div className="relative min-h-screen bg-background overflow-hidden font-sans">
+    <div className="relative min-h-screen bg-background overflow-x-clip font-sans">
 
       {/* Ambient Mac-like Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[140px] pointer-events-none opacity-60 mix-blend-screen" />

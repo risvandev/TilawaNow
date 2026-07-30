@@ -67,7 +67,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-background relative overflow-x-clip flex flex-col">
       {/* Decorative Background Glows - Mac Style */}
       <div className="absolute top-[-10%] left-[5%] w-[50vw] h-[50vh] rounded-full bg-premium-accent/5 blur-[150px] pointer-events-none z-0" />
       <div className="absolute bottom-[20%] right-[-5%] w-[45vw] h-[45vh] rounded-full bg-blue-500/5 blur-[150px] pointer-events-none z-0" />

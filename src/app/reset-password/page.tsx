@@ -72,7 +72,7 @@ const ResetPassword = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background relative flex items-center justify-center p-4 overflow-hidden">
+        <div className="min-h-screen bg-background relative flex items-center justify-center p-4 overflow-x-clip">
             {/* Background Ambience */}
             <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-primary/5" />
             <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />

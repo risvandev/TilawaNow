@@ -799,7 +799,7 @@ const AIAssistance = () => {
 
               {/* Empty State — shown before first message */}
               {messages.length === 0 && !isLoading && (
-                <div className="flex flex-col items-center justify-center h-[calc(100vh-140px)] pt-32 select-none animate-in fade-in duration-700">
+                <div className="flex flex-col items-center justify-center min-h-[60vh] md:h-[calc(100vh-200px)] select-none animate-in fade-in duration-700">
                   <div className="flex flex-col items-center gap-5">
                     <Image
                       src="/quransite_white_small.png"
