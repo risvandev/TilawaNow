@@ -126,23 +126,29 @@ export default function DonatePage() {
     setIsProcessingDonation(true);
     try {
       const isLoaded = await loadRazorpayScript();
-      if (!isLoaded) {
-        toast({ 
-          title: "Adblocker Detected", 
-          description: "Your browser or adblocker is preventing the Razorpay secure checkout from loading. Please disable tracking protection for this site and try again.",
-          variant: "destructive" 
-        });
-        return;
-      }
 
       const response = await fetch("/api/razorpay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: currentAmount, currency, donationType }),
+        body: JSON.stringify({ amount: currentAmount, currency, donationType, useFallback: !isLoaded }),
       });
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.error || "Failed to create payment session");
+
+      // If adblocker blocked the script OR we got a payment link fallback, redirect directly
+      if (!isLoaded || data.payment_link) {
+        if (data.payment_link) {
+          window.location.href = data.payment_link;
+        } else {
+          toast({ 
+            title: "Checkout Blocked", 
+            description: "Please disable your adblocker or privacy shields for this site.",
+            variant: "destructive" 
+          });
+        }
+        return;
+      }
 
       const options: any = {
         key: data.key_id,

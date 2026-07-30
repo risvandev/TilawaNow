@@ -31,7 +31,7 @@ const PLAN_IDS: Record<string, Record<number, string | undefined>> = {
 
 export async function POST(req: Request) {
   try {
-    const { amount, currency = "INR", donationType = "one-time" } = await req.json();
+    const { amount, currency = "INR", donationType = "one-time", useFallback = false } = await req.json();
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
@@ -74,24 +74,49 @@ export async function POST(req: Request) {
         id: subscription.id,
         type: "subscription",
         key_id,
+        payment_link: subscription.short_url,
       });
     } else {
-      // One-time order
-      const options = {
-        amount: Math.round(amount * 100), // Razorpay expects amount in paise/cents
-        currency: currency,
-        receipt: `receipt_${Date.now()}`,
-      };
+      if (useFallback) {
+        // Fallback: Adblocker is active, generate a Payment Link for redirect
+        const paymentLink = await razorpay.paymentLink.create({
+          amount: Math.round(amount * 100),
+          currency: currency,
+          description: "Support TilawaNow",
+          customer: {
+            name: "Supporter",
+            email: "support@tilawanow.vercel.app"
+          },
+          notify: { email: false, sms: false },
+          reminder_enable: false,
+          callback_url: "https://tilawanow.vercel.app",
+          callback_method: "get"
+        });
 
-      const order = await razorpay.orders.create(options);
+        return NextResponse.json({
+          id: paymentLink.id,
+          type: "payment_link",
+          key_id,
+          payment_link: paymentLink.short_url,
+        });
+      } else {
+        // Standard Order
+        const options = {
+          amount: Math.round(amount * 100), // Razorpay expects amount in paise/cents
+          currency: currency,
+          receipt: `receipt_${Date.now()}`,
+        };
 
-      return NextResponse.json({
-        id: order.id,
-        type: "order",
-        currency: order.currency,
-        amount: order.amount,
-        key_id,
-      });
+        const order = await razorpay.orders.create(options);
+
+        return NextResponse.json({
+          id: order.id,
+          type: "order",
+          currency: order.currency,
+          amount: order.amount,
+          key_id,
+        });
+      }
     }
   } catch (error: any) {
     console.error("Razorpay Order Creation Error:", error);
