@@ -127,7 +127,11 @@ export default function DonatePage() {
     try {
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
-        toast({ title: "Failed to load Razorpay", variant: "destructive" });
+        toast({ 
+          title: "Adblocker Detected", 
+          description: "Your browser or adblocker is preventing the Razorpay secure checkout from loading. Please disable tracking protection for this site and try again.",
+          variant: "destructive" 
+        });
         return;
       }
 
