@@ -195,7 +195,7 @@ const MobileBottomNav = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-16 pb-[env(safe-area-inset-bottom)] bg-background/80 backdrop-blur-lg border-t border-border z-[100] md:hidden flex items-center justify-around px-1">
+    <div className="fixed bottom-0 left-0 right-0 h-16 pb-[env(safe-area-inset-bottom)] bg-background border-t border-border z-[100] md:hidden flex items-center justify-around px-1">
       {mobileNavItems.map((item) => {
         const isActive = pathname === item.path ||
           (item.path === "/read" && pathname.startsWith("/read"));

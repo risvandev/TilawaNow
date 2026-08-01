@@ -306,7 +306,7 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         if (!audio || !verse?.audio?.url) return;
 
         const url = verse.audio.url;
-        const fullUrl = url.startsWith('http') ? url : `https://verses.quran.com/${url}`;
+        const fullUrl = url.startsWith('http') ? url : url.startsWith('//') ? `https:${url}` : `https://verses.quran.com/${url}`;
 
         if (audio.src !== fullUrl) {
             console.log(`[AudioEngine] Preheating ${target}: ${verse.verse_key}`);
@@ -328,7 +328,7 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         const url = verse.audio?.url;
         if (!url) return;
 
-        const fullUrl = url.startsWith('http') ? url : `https://verses.quran.com/${url}`;
+        const fullUrl = url.startsWith('http') ? url : url.startsWith('//') ? `https:${url}` : `https://verses.quran.com/${url}`;
         
         if (audio.src === fullUrl && audio.readyState >= 2) {
             console.log(`[AudioEngine] Active Buffer Match for ${verse.verse_key}`);
@@ -479,7 +479,7 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
             const nextVerse = playlist[nextIndex];
             const nextUrl = nextVerse?.audio?.url;
             const fullNextUrl = nextUrl
-                ? (nextUrl.startsWith('http') ? nextUrl : `https://verses.quran.com/${nextUrl}`)
+                ? (nextUrl.startsWith('http') ? nextUrl : nextUrl.startsWith('//') ? `https:${nextUrl}` : `https://verses.quran.com/${nextUrl}`)
                 : null;
 
             // Stop the current buffer immediately

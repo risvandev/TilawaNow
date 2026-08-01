@@ -216,8 +216,8 @@ const Settings = () => {
   return (
     <div className="relative flex-1 min-h-[calc(100vh-4rem)] md:min-h-screen overflow-x-hidden pb-32 md:pb-0">
       {/* Ambient Mac-like Glows */}
-      <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vh] rounded-full bg-primary/10 blur-[140px] pointer-events-none opacity-60 mix-blend-screen z-0" />
-      <div className="fixed top-[30%] right-[-10%] w-[40vw] h-[40vh] rounded-full bg-premium-accent/10 blur-[140px] pointer-events-none opacity-50 mix-blend-screen z-0" />
+      <div className="absolute top-0 left-0 w-[50vw] h-[50vh] rounded-full bg-primary/10 blur-[120px] pointer-events-none opacity-60 mix-blend-screen z-0" />
+      <div className="absolute top-[30vh] right-0 w-[40vw] h-[40vh] rounded-full bg-premium-accent/10 blur-[120px] pointer-events-none opacity-50 mix-blend-screen z-0" />
 
       <div className="relative z-10 container mx-auto px-4 md:px-6 py-4 md:py-8 md:max-w-6xl">
         {/* Mobile Header (Back + Title Inline) */}

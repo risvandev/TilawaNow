@@ -565,8 +565,8 @@ const SurahList = () => {
       !isSidebarOpen ? "max-w-7xl" : "max-w-5xl"
     )}>
       {/* Ambient Mac-like Glows */}
-      <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vh] rounded-full bg-primary/10 blur-[140px] pointer-events-none opacity-60 mix-blend-screen z-0" />
-      <div className="fixed top-[30%] right-[-10%] w-[40vw] h-[40vh] rounded-full bg-premium-accent/10 blur-[140px] pointer-events-none opacity-50 mix-blend-screen z-0" />
+      <div className="absolute top-0 left-0 w-[50vw] h-[50vh] rounded-full bg-primary/10 blur-[120px] pointer-events-none opacity-60 mix-blend-screen z-0" />
+      <div className="absolute top-[30vh] right-0 w-[40vw] h-[40vh] rounded-full bg-premium-accent/10 blur-[120px] pointer-events-none opacity-50 mix-blend-screen z-0" />
       
       <div className="relative z-10">
         <div className="mb-6 md:mb-8 flex items-center justify-between gap-2 md:gap-4 p-4 md:p-0 bg-secondary/30 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none rounded-[2rem] md:rounded-none border border-white/10 md:border-transparent shadow-lg shadow-black/20 md:shadow-none animate-fade-in-up mt-2 md:mt-0">
@@ -1348,21 +1348,24 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
                 size="sm" 
                 className="h-10 px-4 rounded-full gap-2 font-bold shadow-lg shadow-primary/20 shrink-0 ml-1" 
                 onClick={() => {
-                  const playlist = verses.map(v => {
-                    const audioInfo = combinedAudios.get(v.verse_key);
-                    return { 
-                      ...v, 
-                      audio: { 
-                        url: audioInfo?.url || "", 
-                        segments: audioInfo?.segments 
-                      } 
-                    };
-                  });
-                  const resumeVerse = activeSurah?.id === surahId ? currentVerseKey : undefined;
-                  playSurah(surah, playlist, resumeVerse || undefined);
+                  if (activeSurah?.id === surahId) {
+                    togglePlay();
+                  } else {
+                    const playlist = verses.map(v => {
+                      const audioInfo = combinedAudios.get(v.verse_key);
+                      return { 
+                        ...v, 
+                        audio: { 
+                          url: audioInfo?.url || "", 
+                          segments: audioInfo?.segments 
+                        } 
+                      };
+                    });
+                    playSurah(surah, playlist);
+                  }
                 }}
               >
-                {activeSurah?.id === surahId ? (
+                {activeSurah?.id === surahId && isPlaying ? (
                   <>
                     <Pause className="w-4 h-4" />
                     <span className="hidden sm:inline text-xs uppercase tracking-wider">Pause</span>
@@ -1370,7 +1373,7 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
                 ) : (
                   <>
                     <Play className="w-4 h-4 ml-0.5" />
-                    <span className="hidden sm:inline text-xs uppercase tracking-wider">Play</span>
+                    <span className="hidden sm:inline text-xs uppercase tracking-wider">{activeSurah?.id === surahId && !isPlaying ? "Resume" : "Play"}</span>
                   </>
                 )}
               </Button>

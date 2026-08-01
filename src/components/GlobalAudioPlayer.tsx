@@ -244,7 +244,7 @@ const GlobalAudioPlayer = () => {
                 </div>
 
                 {/* Mobile Card Layout */}
-                <div className="md:hidden flex flex-col gap-2 p-2.5 bg-background/70 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/10 ring-1 ring-white/5">
+                <div className="md:hidden flex flex-col gap-2 p-2.5 bg-background rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/10 ring-1 ring-white/5">
                     <div className="flex items-center gap-2.5">
                         {/* Play Button */}
                         <Button
