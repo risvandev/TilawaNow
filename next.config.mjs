@@ -46,7 +46,7 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.puter.com https://va.vercel-scripts.com https://*.razorpay.com blob:",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://verses.quran.com https://api.quran.com https://raw.githubusercontent.com https://lh3.googleusercontent.com https://*.supabase.co https://audio.qurancdn.com",
-              "connect-src 'self' https://api.quran.com https://*.supabase.co wss://*.supabase.co https://*.puter.com wss://*.puter.com https://*.puter.io wss://*.puter.io https://api.puter.com wss://api.puter.com https://vitals.vercel-insights.com https://*.razorpay.com",
+              "connect-src 'self' https://*.quran.com https://*.qurancdn.com https://*.supabase.co wss://*.supabase.co https://*.puter.com wss://*.puter.com https://*.puter.io wss://*.puter.io https://api.puter.com wss://api.puter.com https://vitals.vercel-insights.com https://*.razorpay.com",
               "font-src 'self' data:",
               "frame-ancestors 'self'",
               "frame-src 'self' https://*.razorpay.com",
