@@ -1076,11 +1076,13 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
         userScrollingRef.current = true;
 
         if (virtuosoRef.current) {
+          const isFar = Math.abs((lastScrolledVerseIndexRef.current || 0) - verseIndex) > 5;
           virtuosoRef.current.scrollToIndex({
             index: verseIndex,
             align: 'center',
-            behavior: 'smooth'
+            behavior: isFar ? 'auto' : 'smooth'
           });
+          lastScrolledVerseIndexRef.current = verseIndex;
         } else {
           // Fallback for non-virtualized mode (e.g. Reading Mode)
           const element = document.getElementById(`verse-${verseKey}`);
@@ -1120,40 +1122,53 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
   }, [surahId, loading, surah, logVerseReading, prefetchSurahData, translationId, quranScript]);
   
 
+  const lastScrolledVerseRef = useRef<string | null>(null);
+  const lastScrolledVerseIndexRef = useRef<number>(0);
+
   useEffect(() => {
     if (!loading && currentVerseKey && currentVerseKey.startsWith(`${surahId}:`)) {
       const verseIndex = verses.findIndex(v => v.verse_key === currentVerseKey);
       
       if (verseIndex >= 0 && isPlaying && isAutoScrollEnabled) {
-        userScrollingRef.current = true;
-        
-        if (isReadMode && readVirtuosoRef.current) {
-          const targetVerse = verses[verseIndex];
-          const pageIndex = pages.findIndex(([pageStr]) => parseInt(pageStr) === targetVerse.page_number);
-          if (pageIndex >= 0) {
-            readVirtuosoRef.current.scrollToIndex({
-              index: pageIndex,
-              align: 'start',
-              behavior: 'smooth'
+        // Prevent redundant scrolling to the exact same verse in a short span
+        if (lastScrolledVerseRef.current !== currentVerseKey) {
+          userScrollingRef.current = true;
+          
+          if (isReadMode && readVirtuosoRef.current) {
+            const targetVerse = verses[verseIndex];
+            const pageIndex = pages.findIndex(([pageStr]) => parseInt(pageStr) === targetVerse.page_number);
+            if (pageIndex >= 0) {
+              const isFar = Math.abs((lastScrolledVerseIndexRef.current || 0) - pageIndex) > 2;
+              readVirtuosoRef.current.scrollToIndex({
+                index: pageIndex,
+                align: 'start',
+                behavior: isFar ? 'auto' : 'smooth'
+              });
+              lastScrolledVerseIndexRef.current = pageIndex;
+            }
+          } else if (!isReadMode && virtuosoRef.current) {
+            // Fix bounce by using instant scroll if the target is far away
+            const isFar = Math.abs((lastScrolledVerseIndexRef.current || 0) - verseIndex) > 3;
+            virtuosoRef.current.scrollToIndex({
+              index: verseIndex,
+              align: 'center',
+              behavior: isFar ? 'auto' : 'smooth'
             });
+            lastScrolledVerseIndexRef.current = verseIndex;
+          } else {
+            const element = document.getElementById(`verse-${currentVerseKey}`);
+            if (element) {
+              element.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
           }
-        } else if (!isReadMode && virtuosoRef.current) {
-          virtuosoRef.current.scrollToIndex({
-            index: verseIndex,
-            align: 'center',
-            behavior: 'smooth'
-          });
-        } else {
-          const element = document.getElementById(`verse-${currentVerseKey}`);
-          if (element) {
-            element.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
+          
+          lastScrolledVerseRef.current = currentVerseKey;
+          
+          // Reset userScrolling after animation
+          setTimeout(() => {
+            userScrollingRef.current = false;
+          }, 1000);
         }
-        
-        // Reset userScrolling after animation
-        setTimeout(() => {
-          userScrollingRef.current = false;
-        }, 1000);
       }
 
       logVerseReading(surahId, currentVerseKey);
@@ -1544,10 +1559,6 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
             useWindowScroll
             data={verses}
             defaultItemHeight={200}
-            initialTopMostItemIndex={(() => {
-              const idx = currentVerseKey ? verses.findIndex(v => v.verse_key === currentVerseKey) : 0;
-              return idx >= 0 ? idx : 0;
-            })()}
             increaseViewportBy={400}
             itemsRendered={handleItemsRendered}
             itemContent={(index, verse) => (

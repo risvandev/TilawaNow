@@ -205,8 +205,8 @@
   }
 
   html {
-    scroll-behavior: smooth;
     overflow-x: hidden;
+    /* Removed scroll-behavior: smooth as it completely breaks react-virtuoso resize recalibrations */
   }
 
   body {
