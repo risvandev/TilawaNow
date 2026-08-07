@@ -660,6 +660,7 @@ const AIAssistance = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                aria-label="Start New Chat"
                                 onClick={() => {
                                   sessionStorage.removeItem("tilawanow_chat_history");
                                   setMessages([]);
@@ -683,6 +684,7 @@ const AIAssistance = () => {
                                   <Button
                                     variant="ghost"
                                     size="icon"
+                                    aria-label="Start New Chat"
                                     className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-primary/10 hover:text-primary text-muted-foreground transition-all"
                                   >
                                     <MessageSquarePlus className="w-4 h-4 md:w-5 md:h-5" />
@@ -750,6 +752,7 @@ const AIAssistance = () => {
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label="Disconnect AI Connection"
                               className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all"
                             >
                               <LogOut className="w-4 h-4 md:w-5 md:h-5" />
@@ -896,6 +899,7 @@ const AIAssistance = () => {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label="Select AI Chat Mode"
                           className={cn(
                             "flex items-center justify-center rounded-full md:rounded-xl hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all bg-transparent border-0 border-none shadow-none shrink-0",
                             isMultiline ? "h-8 w-8 md:h-9 md:w-auto md:px-3 md:gap-1.5" : "h-9 w-9 md:h-10 md:w-auto md:px-3 md:gap-1.5"
@@ -968,6 +972,7 @@ const AIAssistance = () => {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Stop Generating"
                       onClick={() => {
                         abortControllerRef.current?.abort();
                         setIsLoading(false);
@@ -983,6 +988,7 @@ const AIAssistance = () => {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Send Message"
                       onClick={() => handleSend()}
                       disabled={!input.trim()}
                       className={cn(

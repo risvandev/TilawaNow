@@ -20,10 +20,9 @@ export function useVisualViewport() {
 
     function handleViewportChange() {
       if (!window.visualViewport) {
-        // Fallback for Android Chrome / older browsers
+        // Fallback for older browsers
         const heightDiff = originalViewportHeight - window.innerHeight;
-        // If the window got smaller, keyboard opened
-        if (heightDiff > 0) {
+        if (heightDiff > 100) {
           updateLayoutForKeyboard(heightDiff);
         } else {
           updateLayoutForKeyboard(0);
@@ -31,28 +30,44 @@ export function useVisualViewport() {
         return;
       }
 
-      // VisualViewport API method
       const vv = window.visualViewport;
       
+      // On iOS, visualViewport.height shrinks but innerHeight does not.
+      // On Android, BOTH visualViewport.height and innerHeight shrink.
       const visibleHeight = vv.height;
       const layoutHeight = window.innerHeight;
-      const calcKeyboardHeight = Math.max(0, layoutHeight - visibleHeight);
-
-      const offsetY = vv.offsetTop;
       
-      if (offsetY > 0 && calcKeyboardHeight < 50) {
-        // iOS approximate keyboard height from offset
-        const approxKeyboardHeight = Math.min(offsetY, window.innerHeight * 0.6);
+      // 1. iOS detection: layout height vs visible height
+      const iosKeyboardHeight = Math.max(0, layoutHeight - visibleHeight);
+      
+      // 2. Android detection: original layout height vs current layout height
+      const androidKeyboardHeight = Math.max(0, originalViewportHeight - layoutHeight);
+
+      // If either method detects a significant keyboard (>100px)
+      if (iosKeyboardHeight > 100) {
+        updateLayoutForKeyboard(iosKeyboardHeight);
+      } else if (androidKeyboardHeight > 100) {
+        // On Android, because the native window resizes, the browser's flexbox 
+        // will naturally push the content up. We DO NOT want to apply a CSS transform
+        // as well, otherwise it will be pushed up twice.
+        // So we set keyboardHeight to 0 for CSS transforms, BUT we set isKeyboardVisible to true
+        // so the UI can strip out the bottom padding (pb-20).
+        setKeyboardHeight(0);
+        setIsKeyboardVisible(true);
+      } else if (vv.offsetTop > 0 && iosKeyboardHeight < 50) {
+        // iOS approximate keyboard height from offset edge case
+        const approxKeyboardHeight = Math.min(vv.offsetTop, window.innerHeight * 0.6);
         updateLayoutForKeyboard(approxKeyboardHeight);
       } else {
-        updateLayoutForKeyboard(calcKeyboardHeight);
+        updateLayoutForKeyboard(0);
       }
     }
 
     function handleWindowResize() {
-      // If the window resizes but keyboard isn't involved (orientation change)
-      if (!isKeyboardVisible) {
-        originalViewportHeight = window.innerHeight;
+      // If the window resizes and no keyboard was previously visible, 
+      // it might be an orientation change, so we reset our baseline height.
+      if (!isKeyboardVisible && Math.abs(originalViewportHeight - window.innerHeight) > 100) {
+        originalViewportHeight = Math.max(originalViewportHeight, window.innerHeight);
       }
       handleViewportChange();
     }

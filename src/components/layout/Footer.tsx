@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Heart, Instagram } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { cn } from "@/lib/utils";
+
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 
 const footerLinks = {
   product: [
@@ -19,9 +22,15 @@ const footerLinks = {
   ],
 };
 
-export const Footer = () => {
+export const Footer = ({ className }: { className?: string }) => {
+  const { isPlayerVisible } = useAudioPlayer();
+
   return (
-    <footer className="bg-card border-t border-border">
+    <footer className={cn(
+      "bg-card border-t border-border mt-auto",
+      isPlayerVisible ? "max-md:pb-36" : "max-md:pb-16",
+      className
+    )}>
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
