@@ -1,5 +1,5 @@
 "use client";
-import { useState, createContext, useContext, ReactNode } from "react";
+import { useState, createContext, useContext, ReactNode, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -193,6 +193,34 @@ const MobileBottomNav = () => {
     { icon: Sparkles, label: "AI Chat", path: "/ai" },
     { icon: Settings, label: "Settings", path: "/settings" },
   ];
+
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    // Only detect on mobile size
+    if (typeof window !== 'undefined' && window.innerWidth > 768) return;
+    
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        setIsKeyboardOpen(true);
+      }
+    };
+
+    const handleFocusOut = () => {
+      setIsKeyboardOpen(false);
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
+
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
+
+  if (isKeyboardOpen) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 h-16 pb-[env(safe-area-inset-bottom)] bg-background border-t border-border z-[100] md:hidden flex items-center justify-around px-1">
