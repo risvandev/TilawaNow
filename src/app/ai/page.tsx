@@ -18,7 +18,8 @@ import {
   Sparkles,
   LogOut,
   MessageSquarePlus,
-  Loader2
+  Loader2,
+  Square
 } from "lucide-react";
 
 import getPuter from "@/lib/puter-service";
@@ -256,6 +257,7 @@ const AIAssistance = () => {
   // Auto-resizing Textarea Ref
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   
   const { keyboardHeight, isKeyboardVisible } = useVisualViewport();
 
@@ -341,18 +343,13 @@ const AIAssistance = () => {
       .filter(msg => msg?.role === "user");
   }, [messages]);
 
-  useEffect(() => {
-    const handleScroll = (e: Event) => {
-      // If the user scrolls up from the bottom of the container, disable auto-scroll
-      const target = e.target as HTMLElement;
-      if (!target || target === document.documentElement) return;
-      const isScrolledUp = target.clientHeight + target.scrollTop < target.scrollHeight - 150;
-      setAutoScrollEnabled(!isScrolledUp);
-    };
-
-    // Attach to a specific scrolling container instead of window (done in JSX on scroll container)
-    // We will attach an onScroll directly to the scroll container in the render block instead
-  }, []);
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (!target) return;
+    // If the user scrolls up from the bottom of the container, disable auto-scroll
+    const isScrolledUp = target.clientHeight + target.scrollTop < target.scrollHeight - 150;
+    setAutoScrollEnabled(!isScrolledUp);
+  };
 
   useEffect(() => {
     if (mounted && autoScrollEnabled && messagesEndRef.current) {
@@ -440,6 +437,10 @@ const AIAssistance = () => {
     const newMessages: ChatMessage[] = [...messages, { role: "user", content: finalMessage }];
     setMessages(newMessages);
     setIsLoading(true);
+    setAutoScrollEnabled(true); // Force scroll to bottom for new messages
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     try {
       const fullSystemPrompt = generateCompanionSystemPrompt(
@@ -486,7 +487,7 @@ const AIAssistance = () => {
       let fullResponse = "";
       await streamChatWithAI(
         chatHistory,
-        (chunk) => {
+        (chunk: string) => {
           fullResponse += chunk;
           setMessages(prev => {
             const updated = [...prev];
@@ -498,7 +499,8 @@ const AIAssistance = () => {
             return updated;
           });
         },
-        contextOpts
+        contextOpts,
+        abortController.signal
       );
 
       const navMatch = fullResponse.match(/\[\[NAVIGATE:\s*(.*?)\s*\]\]/);
@@ -816,7 +818,11 @@ const AIAssistance = () => {
 
               {/* Message History — only render when there's content */}
               {(messages.length > 0 || isLoading) && (
-                <div className="flex-1 w-full overflow-y-auto overscroll-contain touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div 
+                  className="flex-1 w-full overflow-y-auto overscroll-contain touch-pan-y" 
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                  onScroll={handleScroll}
+                >
                   <ChatMessageList
                     messages={messages}
                     isLoading={isLoading}
@@ -957,19 +963,36 @@ const AIAssistance = () => {
                   {/* Spacer for multiline layout to push send button right */}
                   {isMultiline && <div className="order-3 flex-1" />}
 
-                  {/* Right: Send Button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleSend()}
-                    disabled={!input.trim() || isLoading}
-                    className={cn(
-                      "rounded-full hover:bg-primary/10 hover:text-primary transition-all shrink-0",
-                      isMultiline ? "order-4 h-8 w-8 md:h-9 md:w-9" : "order-3 h-9 w-9 md:h-10 md:w-10 md:mb-0.5"
-                    )}
-                  >
-                    <Send className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                  </Button>
+                  {/* Right: Send / Stop Button */}
+                  {isLoading ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        abortControllerRef.current?.abort();
+                        setIsLoading(false);
+                      }}
+                      className={cn(
+                        "rounded-full hover:bg-primary/10 hover:text-primary transition-all shrink-0",
+                        isMultiline ? "order-4 h-8 w-8 md:h-9 md:w-9" : "order-3 h-9 w-9 md:h-10 md:w-10 md:mb-0.5"
+                      )}
+                    >
+                      <Square className="w-4 h-4 md:w-5 md:h-5 text-primary fill-primary" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleSend()}
+                      disabled={!input.trim()}
+                      className={cn(
+                        "rounded-full hover:bg-primary/10 hover:text-primary transition-all shrink-0",
+                        isMultiline ? "order-4 h-8 w-8 md:h-9 md:w-9" : "order-3 h-9 w-9 md:h-10 md:w-10 md:mb-0.5"
+                      )}
+                    >
+                      <Send className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

@@ -116,7 +116,8 @@ Valid tools: get_arabic_text, get_translation, get_tafsir, get_surah_info. Verse
 export const streamChatWithAI = async (
     messages: ChatMessage[],
     onChunk: (chunk: string) => void,
-    options: GroundingContext = { mode: 'Quick' }
+    options: GroundingContext = { mode: 'Quick' },
+    abortSignal?: AbortSignal
 ): Promise<void> => {
     if (typeof window === "undefined") return;
 
@@ -129,51 +130,18 @@ export const streamChatWithAI = async (
 
         const chatOptions: any = { model, stream: true };
 
-        // Smooth streaming queue
-        const queue: string[] = [];
-        let isProcessingQueue = false;
-        let isStreamFinished = false;
-
-        const processQueue = () => {
-            if (queue.length === 0) {
-                if (isStreamFinished) {
-                    isProcessingQueue = false;
-                } else {
-                    setTimeout(processQueue, 16);
-                }
-                return;
-            }
-
-            isProcessingQueue = true;
-            const nextPiece = queue.shift()!;
-            onChunk(nextPiece);
-            setTimeout(processQueue, 16);
-        };
-
-        const pushToQueue = (text: string) => {
-            const chunkSize = 3;
-            for (let i = 0; i < text.length; i += chunkSize) {
-                queue.push(text.slice(i, i + chunkSize));
-            }
-            if (!isProcessingQueue) {
-                processQueue();
-            }
-        };
-
         const responseStream = (await puter.ai.chat(messages, chatOptions)) as any;
 
         if (responseStream && typeof responseStream[Symbol.asyncIterator] === 'function') {
             for await (const part of responseStream) {
+                if (abortSignal?.aborted) break;
                 const text = part?.text || part?.message?.content || part?.delta?.content || (typeof part === 'string' ? part : '');
-                if (text) pushToQueue(text);
+                if (text) onChunk(text);
             }
         } else if (responseStream?.message?.content || responseStream?.text) {
-            pushToQueue(responseStream.message?.content || responseStream.text || "");
-        }
-
-        isStreamFinished = true;
-        while (queue.length > 0 || isProcessingQueue) {
-            await new Promise(r => setTimeout(r, 20));
+            if (!abortSignal?.aborted) {
+                onChunk(responseStream.message?.content || responseStream.text || "");
+            }
         }
 
     } catch (error: any) {

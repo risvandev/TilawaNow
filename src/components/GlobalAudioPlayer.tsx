@@ -357,23 +357,20 @@ const GlobalAudioPlayer = () => {
 
                                 <DropdownMenuItem 
                                     onClick={() => {
+                                        setFocusMode(!isFocusMode);
                                         const elem = document.documentElement;
-                                        if (!document.fullscreenElement) {
+                                        if (!isFocusMode && !document.fullscreenElement) {
                                             elem.requestFullscreen().catch(e => console.error(e));
-                                            if (!isPipOpen) openPip();
-                                        } else {
-                                            if (document.fullscreenElement) {
-                                                document.exitFullscreen().catch(() => {});
-                                            }
-                                            if (isPipOpen) closePip();
+                                        } else if (isFocusMode && document.fullscreenElement) {
+                                            document.exitFullscreen().catch(() => {});
                                         }
                                     }}
                                     className="gap-3 py-3 rounded-xl focus:bg-primary/10 focus:text-primary cursor-pointer"
                                 >
-                                    <Maximize2 className={cn("w-4 h-4", (document.fullscreenElement || isPipOpen) && "text-primary")} />
+                                    <Maximize2 className={cn("w-4 h-4", isFocusMode && "text-primary")} />
                                     <div>
                                         <p className="text-sm font-bold">Focus Mode</p>
-                                        <p className="text-[10px] text-muted-foreground">Fullscreen + Focus window</p>
+                                        <p className="text-[10px] text-muted-foreground">Distraction-free reading</p>
                                     </div>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
