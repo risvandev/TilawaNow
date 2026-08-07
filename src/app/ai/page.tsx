@@ -61,6 +61,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useVisualViewport } from "@/hooks/useVisualViewport";
 
 const QURAN_EXPERT_PROMPT = `SYSTEM PROMPT — TilawaNow Islamic Assistant
 
@@ -254,6 +255,9 @@ const AIAssistance = () => {
 
   // Auto-resizing Textarea Ref
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const { keyboardHeight, isKeyboardVisible } = useVisualViewport();
 
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
@@ -338,32 +342,23 @@ const AIAssistance = () => {
   }, [messages]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      // If the user scrolls up more than 150px from the bottom, disable auto-scroll
-      const isScrolledUp = window.innerHeight + window.scrollY < document.body.scrollHeight - 150;
+    const handleScroll = (e: Event) => {
+      // If the user scrolls up from the bottom of the container, disable auto-scroll
+      const target = e.target as HTMLElement;
+      if (!target || target === document.documentElement) return;
+      const isScrolledUp = target.clientHeight + target.scrollTop < target.scrollHeight - 150;
       setAutoScrollEnabled(!isScrolledUp);
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    // Attach to a specific scrolling container instead of window (done in JSX on scroll container)
+    // We will attach an onScroll directly to the scroll container in the render block instead
   }, []);
 
   useEffect(() => {
-    if (mounted && autoScrollEnabled) {
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    if (mounted && autoScrollEnabled && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [messages, isLoading, mounted, autoScrollEnabled]);
-
-  // Lock body scroll on empty state to prevent scrollbar flash
-  useEffect(() => {
-    if (!mounted) return;
-    if (messages.length === 0 && !isLoading) {
-      document.documentElement.style.overflow = "hidden";
-    } else {
-      document.documentElement.style.overflow = "";
-    }
-    return () => { document.documentElement.style.overflow = ""; };
-  }, [messages.length, isLoading, mounted]);
+  }, [messages, isLoading, mounted, autoScrollEnabled, isKeyboardVisible]);
 
   // Handle Text Selection for Contextual Follow-up
   useEffect(() => {
@@ -545,12 +540,11 @@ const AIAssistance = () => {
   return (
     <TooltipProvider>
       <div className={cn(
-        "transition-all duration-700 relative overflow-x-clip",
-        showOnboarding ? "min-h-[80vh] flex flex-col items-center justify-center pt-0 pb-0 px-4" :
-        messages.length === 0 ? "h-screen overflow-hidden pt-0" : "min-h-screen pt-4 md:pt-16 pb-40"
+        "absolute inset-0 flex flex-col w-full overflow-hidden bg-background transition-all duration-700",
+        showOnboarding && "items-center justify-center p-4"
       )}>
         {/* Bottom White Gradient — visible only on empty initial state */}
-        {messages.length === 0 && !isLoading && (
+        {messages.length === 0 && !isLoading && !showOnboarding && (
           <div 
             className="fixed bottom-0 left-0 right-0 h-[70vh] pointer-events-none z-[1] animate-in fade-in duration-700"
             style={{
@@ -626,7 +620,7 @@ const AIAssistance = () => {
           </div>
         ) : (
           /* Unlocked State - Full AI Interface */
-          <div className="w-full">
+          <div className="w-full flex-1 flex flex-col min-h-0 relative">
             {/* Chat Timeline */}
             <div className="hidden lg:flex fixed right-10 top-1/2 -translate-y-1/2 flex-col items-center gap-2 z-30 py-2">
               {timelineNodes.map((node, i) => (
@@ -648,7 +642,7 @@ const AIAssistance = () => {
                 </Tooltip>
               ))}
             </div>
-            <div className="w-full md:max-w-4xl mx-auto px-4 pt-16 md:pt-20">
+            <div className="w-full flex-1 flex flex-col min-h-0 md:max-w-4xl mx-auto px-4 pt-16 md:pt-20">
               {/* Top Header Fade */}
               <div className={cn(
                 "fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-background via-background/95 to-transparent pt-4 md:pt-6 pb-12 px-6 md:px-12 lg:px-24 xl:px-48 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-500 transition-all md:left-16",
@@ -822,23 +816,29 @@ const AIAssistance = () => {
 
               {/* Message History — only render when there's content */}
               {(messages.length > 0 || isLoading) && (
-                <ChatMessageList
-                  messages={messages}
-                  isLoading={isLoading}
-                  executeNavigation={executeNavigation}
-                  toast={toast}
-                  toolStatus={toolStatus}
-                />
+                <div className="flex-1 w-full overflow-y-auto overscroll-contain touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <ChatMessageList
+                    messages={messages}
+                    isLoading={isLoading}
+                    executeNavigation={executeNavigation}
+                    toast={toast}
+                    toolStatus={toolStatus}
+                  />
+                  <div ref={messagesEndRef} className="h-4 w-full shrink-0" />
+                </div>
               )}
             </div>
 
-            {/* AI Control Center & Input Fade */}
+            {/* AI Control Center & Input Area (FLEX-NONE, NOT FIXED) */}
             <div className={cn(
-              "fixed bottom-16 md:bottom-0 left-0 right-0 z-50 pt-32 pb-6 px-4 pointer-events-none transition-all duration-500 md:left-16",
-              shouldShowExpanded && "md:left-56",
-              messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-transparent" : "bg-transparent"
-            )}>
-              <div className="max-w-3xl mx-auto space-y-4 pointer-events-auto">
+              "flex-none w-full z-50 pt-2 pb-2 px-4 transition-transform duration-150 ease-out",
+              messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-background border-t border-border/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" : "bg-transparent",
+              !isKeyboardVisible && "pb-20 md:pb-6" // 5rem padding on mobile to clear bottom nav, 1.5rem on desktop
+            )}
+            style={{
+              transform: `translateY(-${keyboardHeight}px)`
+            }}>
+              <div className="max-w-3xl mx-auto space-y-4">
 
                 {/* Quoted Context Preview */}
                 {quotedText && (
