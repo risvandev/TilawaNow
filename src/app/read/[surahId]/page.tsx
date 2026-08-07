@@ -1343,40 +1343,65 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
             </Link>
 
             {(combinedAudios.size > 0) && (
-              <Button 
-                variant="hero" 
-                size="sm" 
-                className="h-10 px-4 rounded-full gap-2 font-bold shadow-lg shadow-primary/20 shrink-0 ml-1" 
-                onClick={() => {
-                  if (activeSurah?.id === surahId) {
-                    togglePlay();
-                  } else {
-                    const playlist = verses.map(v => {
-                      const audioInfo = combinedAudios.get(v.verse_key);
-                      return { 
-                        ...v, 
-                        audio: { 
-                          url: audioInfo?.url || "", 
-                          segments: audioInfo?.segments 
-                        } 
-                      };
-                    });
-                    playSurah(surah, playlist);
-                  }
-                }}
-              >
-                {activeSurah?.id === surahId && isPlaying ? (
-                  <>
-                    <Pause className="w-4 h-4" />
-                    <span className="hidden sm:inline text-xs uppercase tracking-wider">Pause</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 ml-0.5" />
-                    <span className="hidden sm:inline text-xs uppercase tracking-wider">{activeSurah?.id === surahId && !isPlaying ? "Resume" : "Play"}</span>
-                  </>
+              <>
+                {activeSurah?.id === surahId && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-10 w-10 p-0 rounded-full border border-white/5 bg-secondary/40 hover:bg-white/10 hover:text-foreground text-muted-foreground shrink-0 transition-all"
+                    title="Restart Surah"
+                    onClick={() => {
+                      const playlist = verses.map(v => {
+                        const audioInfo = combinedAudios.get(v.verse_key);
+                        return { 
+                          ...v, 
+                          audio: { 
+                            url: audioInfo?.url || "", 
+                            segments: audioInfo?.segments 
+                          } 
+                        };
+                      });
+                      playSurah(surah, playlist);
+                    }}
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </Button>
                 )}
-              </Button>
+                <Button 
+                  variant="hero" 
+                  size="sm" 
+                  className="h-10 px-4 rounded-full gap-2 font-bold shadow-lg shadow-primary/20 shrink-0 ml-1" 
+                  onClick={() => {
+                    if (activeSurah?.id === surahId) {
+                      togglePlay();
+                    } else {
+                      const playlist = verses.map(v => {
+                        const audioInfo = combinedAudios.get(v.verse_key);
+                        return { 
+                          ...v, 
+                          audio: { 
+                            url: audioInfo?.url || "", 
+                            segments: audioInfo?.segments 
+                          } 
+                        };
+                      });
+                      playSurah(surah, playlist);
+                    }
+                  }}
+                >
+                  {activeSurah?.id === surahId && isPlaying ? (
+                    <>
+                      <Pause className="w-4 h-4" />
+                      <span className="hidden sm:inline text-xs uppercase tracking-wider">Pause</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 ml-0.5" />
+                      <span className="hidden sm:inline text-xs uppercase tracking-wider">{activeSurah?.id === surahId && !isPlaying ? "Resume" : "Play"}</span>
+                    </>
+                  )}
+                </Button>
+              </>
             )}
           </div>
         </div>
