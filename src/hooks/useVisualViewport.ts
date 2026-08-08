@@ -11,11 +11,18 @@ export function useVisualViewport() {
     if (typeof window === 'undefined') return;
 
     let originalViewportHeight = window.innerHeight;
+    const [viewportHeight, setViewportHeight] = useState(originalViewportHeight);
     
     function updateLayoutForKeyboard(height: number) {
       const safeHeight = Math.max(0, height);
       setKeyboardHeight(safeHeight);
       setIsKeyboardVisible(safeHeight > 50);
+      
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+      } else {
+        setViewportHeight(window.innerHeight - safeHeight);
+      }
     }
 
     function handleViewportChange() {
@@ -54,6 +61,7 @@ export function useVisualViewport() {
         // so the UI can strip out the bottom padding (pb-20).
         setKeyboardHeight(0);
         setIsKeyboardVisible(true);
+        setViewportHeight(visibleHeight);
       } else if (vv.offsetTop > 0 && iosKeyboardHeight < 50) {
         // iOS approximate keyboard height from offset edge case
         const approxKeyboardHeight = Math.min(vv.offsetTop, window.innerHeight * 0.6);
@@ -74,6 +82,9 @@ export function useVisualViewport() {
 
     // Initialize
     originalViewportHeight = window.innerHeight;
+    if (window.visualViewport) {
+      setViewportHeight(window.visualViewport.height);
+    }
 
     if (window.visualViewport) {
       window.visualViewport.addEventListener("resize", handleViewportChange);
@@ -93,5 +104,5 @@ export function useVisualViewport() {
     };
   }, [isKeyboardVisible]);
 
-  return { keyboardHeight, isKeyboardVisible };
+  return { keyboardHeight, isKeyboardVisible, viewportHeight };
 }
