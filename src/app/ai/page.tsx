@@ -542,7 +542,7 @@ const AIAssistance = () => {
   return (
     <TooltipProvider>
       <div className={cn(
-        "absolute inset-0 flex flex-col w-full overflow-hidden bg-background transition-all duration-700",
+        "relative w-full h-full flex flex-col overflow-hidden bg-background transition-all duration-700",
         showOnboarding && "items-center justify-center p-4"
       )}>
         {/* Bottom White Gradient — visible only on empty initial state */}
@@ -798,14 +798,14 @@ const AIAssistance = () => {
 
               {/* Empty State — shown before first message */}
               {messages.length === 0 && !isLoading && (
-                <div className="flex flex-col items-center justify-center min-h-[60vh] md:h-[calc(100vh-200px)] select-none animate-in fade-in duration-700">
+                <div className="flex-1 flex flex-col items-center justify-center p-4 select-none animate-in fade-in duration-700 min-h-0">
                   <div className="flex flex-col items-center gap-5">
                     <Image
                       src="/quransite_white_small.png"
                       alt="TilawaNow"
                       width={64}
                       height={64}
-                      className="opacity-90"
+                      className="opacity-90 shrink-0"
                     />
                     <div className="text-center">
                       <h2 className="text-2xl md:text-3xl font-bold leading-snug text-foreground">
@@ -842,7 +842,7 @@ const AIAssistance = () => {
             <div className={cn(
               "flex-none w-full z-50 pt-2 pb-2 px-4 transition-transform duration-150 ease-out",
               messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-background border-t border-border/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" : "bg-transparent",
-              !isKeyboardVisible && "pb-20 md:pb-6" // 5rem padding on mobile to clear bottom nav, 1.5rem on desktop
+              !isKeyboardVisible ? "pb-20 md:pb-6" : "pb-3 md:pb-6"
             )}
             style={{
               transform: `translateY(-${keyboardHeight}px)`

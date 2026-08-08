@@ -258,13 +258,17 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
   const pathname = usePathname();
   const pagesWithNoGlobalPadding = ["/home", "/about", "/contact", "/help", "/ai"];
   const requiresGlobalPadding = !pagesWithNoGlobalPadding.includes(pathname);
+  const isFullViewportPage = pathname === "/ai";
 
   if (!showSidebar) {
     return <main className="min-h-screen">{children}</main>;
   }
 
   return (
-    <div className="min-h-[100dvh] flex w-full bg-background selection:bg-primary/20">
+    <div className={cn(
+      "min-h-[100dvh] flex w-full bg-background selection:bg-primary/20",
+      isFullViewportPage && "h-[100dvh] max-h-[100dvh] overflow-hidden"
+    )}>
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <AppSidebar />
@@ -275,7 +279,8 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
 
       <main
         className={cn(
-          "flex-1 transition-all duration-300 flex flex-col",
+          "flex-1 transition-all duration-300 flex flex-col relative",
+          isFullViewportPage && "h-full overflow-hidden",
           "ml-0 md:ml-16", // Base mobile: no margin, Base desktop: collapsed margin
           shouldShowExpanded && "md:ml-56", // Expanded desktop margin
           requiresGlobalPadding && (isPlayerActive ? "pb-36 md:pb-0" : "pb-16 md:pb-0"), // Padding ONLY for pages that don't handle their own
