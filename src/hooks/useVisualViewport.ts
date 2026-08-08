@@ -5,13 +5,13 @@ import { useState, useEffect } from "react";
 export function useVisualViewport() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
 
   useEffect(() => {
     // Only run on client
     if (typeof window === 'undefined') return;
 
     let originalViewportHeight = window.innerHeight;
-    const [viewportHeight, setViewportHeight] = useState(originalViewportHeight);
     
     function updateLayoutForKeyboard(height: number) {
       const safeHeight = Math.max(0, height);
