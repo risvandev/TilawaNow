@@ -539,7 +539,7 @@ const AIAssistance = () => {
   return (
     <TooltipProvider>
       <div className={cn(
-        "relative w-full h-full flex flex-col overflow-hidden bg-background transition-all duration-700",
+        "relative w-full h-[100svh] flex flex-col overflow-hidden bg-background transition-all duration-700",
         showOnboarding && "items-center justify-center p-4"
       )}>
         {/* Bottom White Gradient — visible only on empty initial state */}
@@ -835,9 +835,9 @@ const AIAssistance = () => {
               )}
             </div>
 
-            {/* AI Control Center & Input Area (FLEX-NONE, NOT FIXED) */}
+            {/* AI Control Center & Input Area (STICKY BOTTOM CONTAINER) */}
             <div className={cn(
-              "flex-none w-full z-50 pt-2 pb-20 md:pb-6 px-4",
+              "sticky bottom-0 z-10 w-full pt-2 pb-3 md:pb-6 px-4 pb-[env(safe-area-inset-bottom)]",
               messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-background border-t border-border/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" : "bg-transparent"
             )}>
               <div className="max-w-3xl mx-auto space-y-4">

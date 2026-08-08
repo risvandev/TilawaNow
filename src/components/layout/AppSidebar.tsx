@@ -186,6 +186,8 @@ interface MainLayoutProps {
 const MobileBottomNav = () => {
   const pathname = usePathname();
 
+  if (pathname === "/ai") return null;
+
   const mobileNavItems = [
     { icon: Home, label: "Home", path: "/home" },
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -239,7 +241,7 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
   return (
     <div className={cn(
       "min-h-[100dvh] flex w-full bg-background selection:bg-primary/20",
-      isFullViewportPage && "h-[100dvh] max-h-[100dvh] overflow-hidden"
+      isFullViewportPage && "h-[100svh] max-h-[100svh] overflow-hidden"
     )}>
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
