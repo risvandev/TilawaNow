@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 export function useVisualViewport() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const [viewportHeight, setViewportHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
 
   useEffect(() => {
     // Only run on client
@@ -17,12 +16,6 @@ export function useVisualViewport() {
       const safeHeight = Math.max(0, height);
       setKeyboardHeight(safeHeight);
       setIsKeyboardVisible(safeHeight > 50);
-      
-      if (window.visualViewport) {
-        setViewportHeight(window.visualViewport.height);
-      } else {
-        setViewportHeight(window.innerHeight - safeHeight);
-      }
     }
 
     function handleViewportChange() {
@@ -61,7 +54,6 @@ export function useVisualViewport() {
         // so the UI can strip out the bottom padding (pb-20).
         setKeyboardHeight(0);
         setIsKeyboardVisible(true);
-        setViewportHeight(visibleHeight);
       } else if (vv.offsetTop > 0 && iosKeyboardHeight < 50) {
         // iOS approximate keyboard height from offset edge case
         const approxKeyboardHeight = Math.min(vv.offsetTop, window.innerHeight * 0.6);
@@ -82,9 +74,6 @@ export function useVisualViewport() {
 
     // Initialize
     originalViewportHeight = window.innerHeight;
-    if (window.visualViewport) {
-      setViewportHeight(window.visualViewport.height);
-    }
 
     if (window.visualViewport) {
       window.visualViewport.addEventListener("resize", handleViewportChange);
@@ -104,5 +93,5 @@ export function useVisualViewport() {
     };
   }, [isKeyboardVisible]);
 
-  return { keyboardHeight, isKeyboardVisible, viewportHeight };
+  return { keyboardHeight, isKeyboardVisible };
 }

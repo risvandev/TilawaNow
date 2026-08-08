@@ -258,7 +258,8 @@ const AIAssistance = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const { keyboardHeight, isKeyboardVisible, viewportHeight } = useVisualViewport();
+  
+  const { keyboardHeight, isKeyboardVisible } = useVisualViewport();
 
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
@@ -540,17 +541,10 @@ const AIAssistance = () => {
 
   return (
     <TooltipProvider>
-      <div 
-        className={cn(
-          "absolute inset-0 w-full overflow-hidden bg-background transition-all duration-700 flex flex-col",
-          showOnboarding && "items-center justify-center p-4"
-        )}
-        style={{
-          // Lock the height to the visual viewport to prevent iOS Safari 2-scroll issue.
-          // This ensures the container never exceeds the visible area above the keyboard.
-          height: viewportHeight > 0 ? `${viewportHeight}px` : '100dvh'
-        }}
-      >
+      <div className={cn(
+        "absolute inset-0 flex flex-col w-full overflow-hidden bg-background transition-all duration-700",
+        showOnboarding && "items-center justify-center p-4"
+      )}>
         {/* Bottom White Gradient — visible only on empty initial state */}
         {messages.length === 0 && !isLoading && !showOnboarding && (
           <div 
@@ -650,11 +644,10 @@ const AIAssistance = () => {
                 </Tooltip>
               ))}
             </div>
-            
             <div className="w-full flex-1 flex flex-col min-h-0 md:max-w-4xl mx-auto px-4 pt-16 md:pt-20">
               {/* Top Header Fade */}
               <div className={cn(
-                "absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-background via-background/95 to-transparent pt-4 md:pt-6 pb-12 px-6 md:px-12 lg:px-24 xl:px-48 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-500 transition-all md:left-16",
+                "fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-background via-background/95 to-transparent pt-4 md:pt-6 pb-12 px-6 md:px-12 lg:px-24 xl:px-48 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-500 transition-all md:left-16",
                 shouldShowExpanded && "md:left-56"
               )}>
                 <div className="flex items-center justify-between pointer-events-auto">
@@ -803,9 +796,9 @@ const AIAssistance = () => {
               </div>
             </div>
 
-              {/* Empty State — strictly fixed to the screen center so it never shrinks or moves when the keyboard opens */}
+              {/* Empty State — shown before first message */}
               {messages.length === 0 && !isLoading && (
-                <div className="fixed top-[30vh] left-0 right-0 flex flex-col items-center justify-center select-none animate-in fade-in duration-700 pointer-events-none z-10">
+                <div className="flex flex-col items-center justify-center min-h-[60vh] md:h-[calc(100vh-200px)] select-none animate-in fade-in duration-700">
                   <div className="flex flex-col items-center gap-5">
                     <Image
                       src="/quransite_white_small.png"
@@ -845,7 +838,7 @@ const AIAssistance = () => {
               )}
             </div>
 
-            {/* AI Control Center & Input Area (FLEX-NONE, STICKS TO BOTTOM OF VISUAL VIEWPORT) */}
+            {/* AI Control Center & Input Area (FLEX-NONE, NOT FIXED) */}
             <div className={cn(
               "flex-none w-full z-50 pt-2 pb-2 px-4 transition-transform duration-150 ease-out",
               messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-background border-t border-border/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" : "bg-transparent",
