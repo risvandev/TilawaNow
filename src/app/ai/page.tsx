@@ -62,7 +62,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { useVisualViewport } from "@/hooks/useVisualViewport";
 
 const QURAN_EXPERT_PROMPT = `SYSTEM PROMPT — TilawaNow Islamic Assistant
 
@@ -258,8 +257,6 @@ const AIAssistance = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  
-  const { keyboardHeight, isKeyboardVisible } = useVisualViewport();
 
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
@@ -355,7 +352,7 @@ const AIAssistance = () => {
     if (mounted && autoScrollEnabled && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [messages, isLoading, mounted, autoScrollEnabled, isKeyboardVisible]);
+  }, [messages, isLoading, mounted, autoScrollEnabled]);
 
   // Handle Text Selection for Contextual Follow-up
   useEffect(() => {
@@ -840,13 +837,9 @@ const AIAssistance = () => {
 
             {/* AI Control Center & Input Area (FLEX-NONE, NOT FIXED) */}
             <div className={cn(
-              "flex-none w-full z-50 pt-2 pb-2 px-4 transition-transform duration-150 ease-out",
-              messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-background border-t border-border/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" : "bg-transparent",
-              !isKeyboardVisible ? "pb-20 md:pb-6" : "pb-3 md:pb-6"
-            )}
-            style={{
-              transform: `translateY(-${keyboardHeight}px)`
-            }}>
+              "flex-none w-full z-50 pt-2 pb-20 md:pb-6 px-4",
+              messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-background border-t border-border/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" : "bg-transparent"
+            )}>
               <div className="max-w-3xl mx-auto space-y-4">
 
                 {/* Quoted Context Preview */}
