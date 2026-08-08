@@ -256,8 +256,8 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
   const isPlayerActive = isPlayerVisible;
 
   const pathname = usePathname();
-  const pagesWithFooter = ["/home", "/about", "/contact", "/help"];
-  const hasFooter = pagesWithFooter.includes(pathname);
+  const pagesWithNoGlobalPadding = ["/home", "/about", "/contact", "/help", "/ai"];
+  const requiresGlobalPadding = !pagesWithNoGlobalPadding.includes(pathname);
 
   if (!showSidebar) {
     return <main className="min-h-screen">{children}</main>;
@@ -278,7 +278,7 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
           "flex-1 transition-all duration-300 flex flex-col",
           "ml-0 md:ml-16", // Base mobile: no margin, Base desktop: collapsed margin
           shouldShowExpanded && "md:ml-56", // Expanded desktop margin
-          !hasFooter && (isPlayerActive ? "pb-36 md:pb-0" : "pb-16 md:pb-0"), // Padding ONLY for pages without a footer
+          requiresGlobalPadding && (isPlayerActive ? "pb-36 md:pb-0" : "pb-16 md:pb-0"), // Padding ONLY for pages that don't handle their own
           "max-md:!ml-0 max-md:!pl-0 max-md:w-full" // Force reset for mobile
         )}
       >
