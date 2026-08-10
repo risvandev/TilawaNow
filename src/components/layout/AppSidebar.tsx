@@ -241,13 +241,18 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
     return <main className="min-h-screen">{children}</main>;
   }
 
+  const [isIOS, setIsIOS] = useState(false);
+  useEffect(() => {
+    setIsIOS(typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent));
+  }, []);
+
   return (
     <div 
       className={cn(
         "flex w-full bg-background selection:bg-primary/20",
-        isFullViewportPage ? "fixed top-0 left-0 right-0 overflow-hidden" : "min-h-[100dvh]"
+        isFullViewportPage ? "fixed inset-0 overflow-hidden" : "min-h-[100dvh]"
       )}
-      style={isFullViewportPage && viewportHeight ? { height: `${viewportHeight}px`, bottom: 'auto' } : {}}
+      style={isFullViewportPage && viewportHeight && isIOS ? { height: `${viewportHeight}px`, bottom: 'auto' } : {}}
     >
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
