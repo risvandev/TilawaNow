@@ -644,13 +644,11 @@ const AIAssistance = () => {
                 </Tooltip>
               ))}
             </div>
-            <div className="w-full flex-1 flex flex-col min-h-0 md:max-w-4xl mx-auto px-4">
-              {/* Top Header Fade */}
-              <div className={cn(
-                "fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-background via-background/95 to-transparent pt-4 md:pt-6 pb-12 px-6 md:px-12 lg:px-24 xl:px-48 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-500 transition-all md:left-16",
-                shouldShowExpanded && "md:left-56"
-              )}>
-                <div className="flex items-center justify-between pointer-events-auto">
+            {/* Top Header */}
+            <div className={cn(
+              "flex-none z-40 bg-background pt-4 md:pt-6 pb-4 px-6 md:px-12 lg:px-24 xl:px-48 animate-in fade-in slide-in-from-top-4 duration-500 transition-all border-b border-border/10"
+            )}>
+              <div className="flex items-center justify-between">
                   <div className="flex-1 flex justify-start">
                     {messages.length > 0 && (
                       dontShowNewChatConfirm ? (
@@ -796,6 +794,7 @@ const AIAssistance = () => {
                 </div>
               </div>
 
+            <div className="w-full flex-1 flex flex-col min-h-0 md:max-w-4xl mx-auto px-4">
               {/* Empty State — shown before first message */}
               {messages.length === 0 && !isLoading && (
                 <div className="flex-1 flex flex-col items-center justify-center p-4 select-none animate-in fade-in duration-700 min-h-0">
@@ -838,11 +837,11 @@ const AIAssistance = () => {
               )}
             </div>
 
-            {/* AI Control Center & Input Area (STICKY BOTTOM CONTAINER) */}
+            {/* AI Control Center & Input Area (FLEX BOTTOM CONTAINER) */}
             <div className={cn(
-              "sticky bottom-0 z-10 w-full pt-2 px-4 pb-[env(safe-area-inset-bottom)] touch-none",
+              "flex-none z-10 w-full pt-2 px-4 pb-[env(safe-area-inset-bottom)] touch-none",
               !isKeyboardVisible ? "pb-20 md:pb-6" : "pb-3 md:pb-6",
-              messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-background border-t border-border/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" : "bg-transparent"
+              messages.length > 0 ? "bg-background border-t border-border/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" : "bg-transparent"
             )}>
               <div className="max-w-3xl mx-auto space-y-4">
 
