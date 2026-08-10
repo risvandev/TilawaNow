@@ -249,6 +249,23 @@ const AIAssistance = () => {
   const [quotedText, setQuotedText] = useState<string | null>(null);
   const [selectionPopup, setSelectionPopup] = useState<{ text: string, x: number, y: number } | null>(null);
 
+  // Lock body scrolling strictly to prevent mobile browser visual viewport panning
+  useEffect(() => {
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+    document.body.style.height = "100%";
+    
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
+    };
+  }, []);
+
   // Puter State
   const [isPuterSignedIn, setIsPuterSignedIn] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -542,7 +559,7 @@ const AIAssistance = () => {
   return (
     <TooltipProvider>
       <div className={cn(
-        "relative w-full h-[100svh] flex flex-col overflow-hidden bg-background transition-all duration-700",
+        "relative w-full h-full flex flex-col overflow-hidden bg-background transition-all duration-700",
         showOnboarding && "items-center justify-center p-4"
       )}>
         {/* Bottom White Gradient — visible only on empty initial state */}

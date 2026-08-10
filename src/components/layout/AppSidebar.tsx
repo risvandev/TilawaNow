@@ -235,16 +235,20 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
   const pagesWithNoGlobalPadding = ["/home", "/about", "/contact", "/help", "/ai"];
   const requiresGlobalPadding = !pagesWithNoGlobalPadding.includes(pathname);
   const isFullViewportPage = pathname === "/ai";
+  const { viewportHeight } = useVisualViewport();
 
   if (!showSidebar) {
     return <main className="min-h-screen">{children}</main>;
   }
 
   return (
-    <div className={cn(
-      "flex w-full bg-background selection:bg-primary/20",
-      isFullViewportPage ? "fixed inset-0 overflow-hidden" : "min-h-[100dvh]"
-    )}>
+    <div 
+      className={cn(
+        "flex w-full bg-background selection:bg-primary/20",
+        isFullViewportPage ? "fixed top-0 left-0 right-0 overflow-hidden" : "min-h-[100dvh]"
+      )}
+      style={isFullViewportPage && viewportHeight ? { height: `${viewportHeight}px`, bottom: 'auto' } : {}}
+    >
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <AppSidebar />
