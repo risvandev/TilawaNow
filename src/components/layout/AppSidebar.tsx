@@ -242,8 +242,8 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
 
   return (
     <div className={cn(
-      "min-h-[100dvh] flex w-full bg-background selection:bg-primary/20",
-      isFullViewportPage && "h-[100dvh] max-h-[100dvh] overflow-hidden"
+      "flex w-full bg-background selection:bg-primary/20",
+      isFullViewportPage ? "fixed inset-0 overflow-hidden" : "min-h-[100dvh]"
     )}>
       {/* Desktop Sidebar */}
       <div className="hidden md:block">

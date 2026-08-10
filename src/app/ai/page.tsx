@@ -840,7 +840,7 @@ const AIAssistance = () => {
 
             {/* AI Control Center & Input Area (STICKY BOTTOM CONTAINER) */}
             <div className={cn(
-              "sticky bottom-0 z-10 w-full pt-2 px-4 pb-[env(safe-area-inset-bottom)]",
+              "sticky bottom-0 z-10 w-full pt-2 px-4 pb-[env(safe-area-inset-bottom)] touch-none",
               !isKeyboardVisible ? "pb-20 md:pb-6" : "pb-3 md:pb-6",
               messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-background border-t border-border/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" : "bg-transparent"
             )}>
@@ -957,7 +957,7 @@ const AIAssistance = () => {
                           handleSend();
                         }
                       }}
-                      className="col-start-1 row-start-1 h-full min-h-[36px] max-h-[160px] w-full bg-transparent border-0 border-none shadow-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus:outline-none resize-none py-1.5 px-1 md:py-2 text-base text-foreground font-medium placeholder:text-muted-foreground/40 disabled:opacity-50 leading-relaxed scrollbar-hide overflow-y-auto will-change-[height]"
+                      className="col-start-1 row-start-1 h-full min-h-[36px] max-h-[160px] w-full bg-transparent border-0 border-none shadow-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus:outline-none resize-none py-1.5 px-1 md:py-2 text-base text-foreground font-medium placeholder:text-muted-foreground/40 disabled:opacity-50 leading-relaxed scrollbar-hide overflow-y-auto touch-pan-y overscroll-none will-change-[height]"
                     />
                   </div>
 
