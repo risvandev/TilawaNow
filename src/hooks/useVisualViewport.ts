@@ -19,7 +19,10 @@ export function useVisualViewport() {
         const currentInnerHeight = window.innerHeight;
         
         if (vv) {
-          setViewportHeight(vv.height);
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          // Android visualViewport under-reports space by 48px when the system nav bar is active.
+          // window.innerHeight accurately reflects the space above the keyboard on Android.
+          setViewportHeight(isIOS ? vv.height : currentInnerHeight);
 
           const iosHeightDiff = Math.max(0, currentInnerHeight - vv.height);
           const androidHeightDiff = Math.max(0, originalWindowHeight - currentInnerHeight);
