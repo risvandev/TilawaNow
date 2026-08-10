@@ -276,7 +276,7 @@ const AIAssistance = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const { isKeyboardVisible } = useVisualViewport();
+  const { isKeyboardVisible, viewportHeight } = useVisualViewport();
 
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
@@ -962,7 +962,7 @@ const AIAssistance = () => {
                     {/* Actual textarea strictly follows grid cell height */}
                     <Textarea
                       ref={textareaRef}
-                      placeholder={currentContext.verseKey ? `Ask about Verse ${currentContext.verseKey}...` : "Ask about..."}
+                      placeholder={`DEBUG KB: ${isKeyboardVisible} | VP: ${Math.round(viewportHeight)}`}
                       value={input}
                       rows={1}
                       disabled={isLoading}
