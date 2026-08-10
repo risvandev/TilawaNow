@@ -967,7 +967,7 @@ const AIAssistance = () => {
                     {/* Actual textarea strictly follows grid cell height */}
                     <Textarea
                       ref={textareaRef}
-                      placeholder={`DEBUG KB: ${isKeyboardVisible} | VP: ${Math.round(viewportHeight)}`}
+                      placeholder={currentContext.verseKey ? `Ask about Verse ${currentContext.verseKey}...` : "Ask about..."}
                       value={input}
                       rows={1}
                       disabled={isLoading}

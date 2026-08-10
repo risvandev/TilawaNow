@@ -21,7 +21,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }
 
   // Hide entirely if it starts with read/explained or info, if you don't want sidebar there
-  if (pathname.startsWith("/info/") || pathname.startsWith("/explained/")) {
+  if (pathname?.startsWith("/info/") || pathname?.startsWith("/explained/")) {
     showSidebar = false;
   }
 

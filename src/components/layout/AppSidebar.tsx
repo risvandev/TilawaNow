@@ -237,14 +237,14 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
   const isFullViewportPage = pathname === "/ai";
   const { viewportHeight } = useVisualViewport();
 
-  if (!showSidebar) {
-    return <main className="min-h-screen">{children}</main>;
-  }
-
   const [isIOS, setIsIOS] = useState(false);
   useEffect(() => {
     setIsIOS(typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent));
   }, []);
+
+  if (!showSidebar) {
+    return <main className="min-h-screen">{children}</main>;
+  }
 
   return (
     <div 
