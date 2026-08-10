@@ -59,8 +59,9 @@ export function useVisualViewport() {
     }
 
     function handleWindowResize() {
-      // Only reset original height if width changed (orientation change/split screen)
-      if (window.innerWidth !== originalWindowWidth) {
+      // Only reset original height if width changed significantly (orientation change/split screen)
+      // Ignoring minor width changes (like scrollbars appearing/disappearing) which are < 50px
+      if (Math.abs(window.innerWidth - originalWindowWidth) > 50) {
         originalWindowWidth = window.innerWidth;
         originalWindowHeight = window.innerHeight;
       }
