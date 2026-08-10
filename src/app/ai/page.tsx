@@ -256,7 +256,7 @@ const AIAssistance = () => {
     document.body.style.position = "fixed";
     document.body.style.width = "100%";
     document.body.style.height = "100%";
-    
+
     return () => {
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
@@ -663,158 +663,158 @@ const AIAssistance = () => {
             </div>
             {/* Top Header */}
             <div className={cn(
-              "flex-none z-40 bg-background pt-4 md:pt-6 pb-4 px-6 md:px-12 lg:px-24 xl:px-48 animate-in fade-in slide-in-from-top-4 duration-500 transition-all border-b border-border/10"
+              "absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-background via-background/95 to-transparent pt-4 md:pt-6 pb-8 md:pb-12 px-6 md:px-12 lg:px-24 xl:px-48 animate-in fade-in slide-in-from-top-4 duration-500 transition-all pointer-events-none"
             )}>
-              <div className="flex items-center justify-between">
-                  <div className="flex-1 flex justify-start">
-                    {messages.length > 0 && (
-                      dontShowNewChatConfirm ? (
+              <div className="flex items-center justify-between pointer-events-auto">
+                <div className="flex-1 flex justify-start">
+                  {messages.length > 0 && (
+                    dontShowNewChatConfirm ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Start New Chat"
+                              onClick={() => {
+                                sessionStorage.removeItem("tilawanow_chat_history");
+                                setMessages([]);
+                              }}
+                              className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-primary/10 hover:text-primary text-muted-foreground transition-all"
+                            >
+                              <MessageSquarePlus className="w-4 h-4 md:w-5 md:h-5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="text-xs">
+                            Start New Chat
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <AlertDialog>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Start New Chat"
-                                onClick={() => {
-                                  sessionStorage.removeItem("tilawanow_chat_history");
-                                  setMessages([]);
-                                }}
-                                className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-primary/10 hover:text-primary text-muted-foreground transition-all"
-                              >
-                                <MessageSquarePlus className="w-4 h-4 md:w-5 md:h-5" />
-                              </Button>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label="Start New Chat"
+                                  className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-primary/10 hover:text-primary text-muted-foreground transition-all"
+                                >
+                                  <MessageSquarePlus className="w-4 h-4 md:w-5 md:h-5" />
+                                </Button>
+                              </AlertDialogTrigger>
                             </TooltipTrigger>
                             <TooltipContent side="bottom" className="text-xs">
                               Start New Chat
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
-                      ) : (
-                        <AlertDialog>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Start New Chat"
-                                    className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-primary/10 hover:text-primary text-muted-foreground transition-all"
-                                  >
-                                    <MessageSquarePlus className="w-4 h-4 md:w-5 md:h-5" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent side="bottom" className="text-xs">
-                                Start New Chat
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
 
-                          <AlertDialogContent className="max-w-[90vw] md:max-w-sm rounded-2xl glass-card border-white/10 p-6 pointer-events-auto">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-base md:text-lg font-bold text-foreground">
-                                Start a new chat?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
-                                Clear history to speed up responses and save AI credits. (Past chats aren't saved on this device).
-                              </AlertDialogDescription>
-                              <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/20">
-                                <Checkbox
-                                  id="dont-show-new-chat"
-                                  checked={rememberNewChatChoice}
-                                  onCheckedChange={(checked) => setRememberNewChatChoice(!!checked)}
-                                />
-                                <label
-                                  htmlFor="dont-show-new-chat"
-                                  className="text-xs text-muted-foreground cursor-pointer select-none"
-                                >
-                                  Don't show this again
-                                </label>
-                              </div>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter className="flex-row justify-end gap-2 mt-5">
-                              <AlertDialogCancel className="rounded-xl text-xs font-semibold h-9 px-4 mt-0 bg-secondary/50 border-white/10 hover:bg-secondary">
-                                Cancel
-                              </AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => {
-                                  if (rememberNewChatChoice) {
-                                    localStorage.setItem("dontShowNewChatConfirm", "true");
-                                    setDontShowNewChatConfirm(true);
-                                  }
-                                  sessionStorage.removeItem("tilawanow_chat_history");
-                                  setMessages([]);
-                                }}
-                                className="rounded-xl text-xs font-semibold h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90"
+                        <AlertDialogContent className="max-w-[90vw] md:max-w-sm rounded-2xl glass-card border-white/10 p-6 pointer-events-auto">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-base md:text-lg font-bold text-foreground">
+                              Start a new chat?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
+                              Clear history to speed up responses and save AI credits. (Past chats aren't saved on this device).
+                            </AlertDialogDescription>
+                            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/20">
+                              <Checkbox
+                                id="dont-show-new-chat"
+                                checked={rememberNewChatChoice}
+                                onCheckedChange={(checked) => setRememberNewChatChoice(!!checked)}
+                              />
+                              <label
+                                htmlFor="dont-show-new-chat"
+                                className="text-xs text-muted-foreground cursor-pointer select-none"
                               >
-                                Start New
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )
-                    )}
-                  </div>
-                  <h1 className="text-lg md:text-2xl font-bold text-foreground tracking-tight text-center">TilawaNow AI</h1>
-                  <div className="flex-1 flex justify-end">
-                    <AlertDialog>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Disconnect AI Connection"
-                                className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all"
-                              >
-                                <LogOut className="w-4 h-4 md:w-5 md:h-5" />
-                              </Button>
-                            </AlertDialogTrigger>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom" className="text-xs">
-                            Disconnect AI Connection
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                                Don't show this again
+                              </label>
+                            </div>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="flex-row justify-end gap-2 mt-5">
+                            <AlertDialogCancel className="rounded-xl text-xs font-semibold h-9 px-4 mt-0 bg-secondary/50 border-white/10 hover:bg-secondary">
+                              Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => {
+                                if (rememberNewChatChoice) {
+                                  localStorage.setItem("dontShowNewChatConfirm", "true");
+                                  setDontShowNewChatConfirm(true);
+                                }
+                                sessionStorage.removeItem("tilawanow_chat_history");
+                                setMessages([]);
+                              }}
+                              className="rounded-xl text-xs font-semibold h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90"
+                            >
+                              Start New
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )
+                  )}
+                </div>
+                <h1 className="text-lg md:text-2xl font-bold text-foreground tracking-tight text-center">TilawaNow AI</h1>
+                <div className="flex-1 flex justify-end">
+                  <AlertDialog>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Disconnect AI Connection"
+                              className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all"
+                            >
+                              <LogOut className="w-4 h-4 md:w-5 md:h-5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="text-xs">
+                          Disconnect AI Connection
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
 
-                      <AlertDialogContent className="max-w-[90vw] md:max-w-sm rounded-2xl glass-card border-white/10 p-6 pointer-events-auto">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="text-base md:text-lg font-bold text-foreground">
-                            Disconnect AI?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
-                            Are you sure you want to disconnect? You will need to sign in again to use the AI companion.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter className="flex-row justify-end gap-2 mt-5">
-                          <AlertDialogCancel className="rounded-xl text-xs font-semibold h-9 px-4 mt-0 bg-secondary/50 border-white/10 hover:bg-secondary">
-                            Cancel
-                          </AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => {
-                              getPuter()?.auth.signOut();
-                              setIsPuterSignedIn(false);
-                              setShowOnboarding(true);
-                              toast({ title: "Connection Reset", description: "You have disconnected from Puter AI." });
-                            }}
-                            className="rounded-xl text-xs font-semibold h-9 px-4 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Disconnect
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                    <AlertDialogContent className="max-w-[90vw] md:max-w-sm rounded-2xl glass-card border-white/10 p-6 pointer-events-auto">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-base md:text-lg font-bold text-foreground">
+                          Disconnect AI?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
+                          Are you sure you want to disconnect? You will need to sign in again to use the AI companion.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="flex-row justify-end gap-2 mt-5">
+                        <AlertDialogCancel className="rounded-xl text-xs font-semibold h-9 px-4 mt-0 bg-secondary/50 border-white/10 hover:bg-secondary">
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            getPuter()?.auth.signOut();
+                            setIsPuterSignedIn(false);
+                            setShowOnboarding(true);
+                            toast({ title: "Connection Reset", description: "You have disconnected from Puter AI." });
+                          }}
+                          className="rounded-xl text-xs font-semibold h-9 px-4 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Disconnect
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
+            </div>
 
             <div className="w-full flex-1 flex flex-col min-h-0 md:max-w-4xl mx-auto px-4">
               {/* Empty State — shown before first message */}
               {messages.length === 0 && !isLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center p-4 select-none animate-in fade-in duration-700 min-h-0">
+                <div className="flex-1 flex flex-col items-center justify-center p-4 pt-24 pb-32 select-none animate-in fade-in duration-700 min-h-0">
                   <div className="flex flex-col items-center gap-5">
                     <Image
                       src="/quransite_white_small.png"
@@ -838,7 +838,7 @@ const AIAssistance = () => {
               {/* Message History — only render when there's content */}
               {(messages.length > 0 || isLoading) && (
                 <div
-                  className="flex-1 w-full overflow-y-auto overscroll-contain touch-pan-y"
+                  className="flex-1 w-full overflow-y-auto overscroll-contain touch-pan-y pt-24 pb-32"
                   style={{ WebkitOverflowScrolling: 'touch' }}
                   onScroll={handleScroll}
                 >
@@ -854,13 +854,13 @@ const AIAssistance = () => {
               )}
             </div>
 
-            {/* AI Control Center & Input Area (FLEX BOTTOM CONTAINER) */}
+            {/* AI Control Center & Input Area (ABSOLUTE BOTTOM CONTAINER) */}
             <div className={cn(
-              "flex-none z-10 w-full pt-2 px-4 pb-[env(safe-area-inset-bottom)] touch-none",
+              "absolute bottom-0 left-0 right-0 z-10 w-full pt-8 px-4 pb-[env(safe-area-inset-bottom)] touch-none pointer-events-none transition-all duration-300",
               !isKeyboardVisible ? "pb-20 md:pb-6" : "pb-3 md:pb-6",
-              messages.length > 0 ? "bg-background border-t border-border/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" : "bg-transparent"
+              messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-transparent" : "bg-transparent"
             )}>
-              <div className="max-w-3xl mx-auto space-y-4">
+              <div className="max-w-3xl mx-auto space-y-4 pointer-events-auto">
 
                 {/* Quoted Context Preview */}
                 {quotedText && (
@@ -962,7 +962,7 @@ const AIAssistance = () => {
                     {/* Actual textarea strictly follows grid cell height */}
                     <Textarea
                       ref={textareaRef}
-                      placeholder={currentContext.verseKey ? `Ask about Verse ${currentContext.verseKey}...` : "Ask about the Quran..."}
+                      placeholder={currentContext.verseKey ? `Ask about Verse ${currentContext.verseKey}...` : "Ask about..."}
                       value={input}
                       rows={1}
                       disabled={isLoading}

@@ -10,6 +10,7 @@ export function useVisualViewport() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    let originalWindowWidth = window.innerWidth;
     let originalWindowHeight = window.innerHeight;
 
     function handleViewportChange() {
@@ -55,13 +56,16 @@ export function useVisualViewport() {
     }
 
     function handleWindowResize() {
-      if (!isKeyboardVisible && Math.abs(originalWindowHeight - window.innerHeight) > 100) {
+      // Only reset original height if width changed (orientation change/split screen)
+      if (window.innerWidth !== originalWindowWidth) {
+        originalWindowWidth = window.innerWidth;
         originalWindowHeight = window.innerHeight;
       }
       handleViewportChange();
     }
 
     // Initial setup
+    originalWindowWidth = window.innerWidth;
     originalWindowHeight = window.innerHeight;
     setViewportHeight(window.visualViewport ? window.visualViewport.height : window.innerHeight);
 
