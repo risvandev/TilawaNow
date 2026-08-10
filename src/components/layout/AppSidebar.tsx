@@ -19,6 +19,7 @@ import {
 import { Logo } from "@/components/Logo";
 import { usePrefetch } from "@/hooks/use-prefetch";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useVisualViewport } from "@/hooks/useVisualViewport";
 
 interface SidebarContextType {
   isExpanded: boolean;
@@ -185,8 +186,7 @@ interface MainLayoutProps {
 
 const MobileBottomNav = () => {
   const pathname = usePathname();
-
-  if (pathname === "/ai") return null;
+  const { isKeyboardVisible } = useVisualViewport();
 
   const mobileNavItems = [
     { icon: Home, label: "Home", path: "/home" },
@@ -195,6 +195,8 @@ const MobileBottomNav = () => {
     { icon: Sparkles, label: "AI Chat", path: "/ai" },
     { icon: Settings, label: "Settings", path: "/settings" },
   ];
+
+  if (isKeyboardVisible) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 h-16 pb-[env(safe-area-inset-bottom)] bg-background border-t border-border z-[100] md:hidden flex items-center justify-around px-1">
@@ -241,7 +243,7 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
   return (
     <div className={cn(
       "min-h-[100dvh] flex w-full bg-background selection:bg-primary/20",
-      isFullViewportPage && "h-[100svh] max-h-[100svh] overflow-hidden"
+      isFullViewportPage && "h-[100dvh] max-h-[100dvh] overflow-hidden"
     )}>
       {/* Desktop Sidebar */}
       <div className="hidden md:block">

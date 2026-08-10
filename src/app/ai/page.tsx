@@ -62,6 +62,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useVisualViewport } from "@/hooks/useVisualViewport";
 
 const QURAN_EXPERT_PROMPT = `SYSTEM PROMPT — TilawaNow Islamic Assistant
 
@@ -144,7 +145,7 @@ const ChatMessageList = memo(({
   toolStatus: string | null;
 }) => {
   return (
-    <div className="space-y-8 pb-40 md:pb-32">
+    <div className="space-y-8 pt-20 md:pt-24 pb-40 md:pb-32">
       {messages.map((message, index) => {
         if (message.role === "assistant" && !message.content && isLoading && index === messages.length - 1) {
           return (
@@ -257,6 +258,8 @@ const AIAssistance = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const { isKeyboardVisible } = useVisualViewport();
 
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
@@ -641,7 +644,7 @@ const AIAssistance = () => {
                 </Tooltip>
               ))}
             </div>
-            <div className="w-full flex-1 flex flex-col min-h-0 md:max-w-4xl mx-auto px-4 pt-16 md:pt-20">
+            <div className="w-full flex-1 flex flex-col min-h-0 md:max-w-4xl mx-auto px-4">
               {/* Top Header Fade */}
               <div className={cn(
                 "fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-background via-background/95 to-transparent pt-4 md:pt-6 pb-12 px-6 md:px-12 lg:px-24 xl:px-48 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-500 transition-all md:left-16",
@@ -837,7 +840,8 @@ const AIAssistance = () => {
 
             {/* AI Control Center & Input Area (STICKY BOTTOM CONTAINER) */}
             <div className={cn(
-              "sticky bottom-0 z-10 w-full pt-2 pb-3 md:pb-6 px-4 pb-[env(safe-area-inset-bottom)]",
+              "sticky bottom-0 z-10 w-full pt-2 px-4 pb-[env(safe-area-inset-bottom)]",
+              !isKeyboardVisible ? "pb-20 md:pb-6" : "pb-3 md:pb-6",
               messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-background border-t border-border/50 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]" : "bg-transparent"
             )}>
               <div className="max-w-3xl mx-auto space-y-4">
@@ -953,7 +957,7 @@ const AIAssistance = () => {
                           handleSend();
                         }
                       }}
-                      className="col-start-1 row-start-1 h-full min-h-[36px] max-h-[160px] w-full bg-transparent border-0 border-none shadow-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus:outline-none resize-none py-1.5 px-1 md:py-2 text-base text-foreground font-medium placeholder:text-muted-foreground/40 disabled:opacity-50 leading-relaxed scrollbar-hide overflow-hidden will-change-[height]"
+                      className="col-start-1 row-start-1 h-full min-h-[36px] max-h-[160px] w-full bg-transparent border-0 border-none shadow-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus:outline-none resize-none py-1.5 px-1 md:py-2 text-base text-foreground font-medium placeholder:text-muted-foreground/40 disabled:opacity-50 leading-relaxed scrollbar-hide overflow-y-auto will-change-[height]"
                     />
                   </div>
 
