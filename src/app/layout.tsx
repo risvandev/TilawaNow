@@ -42,6 +42,11 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
 };
 
+export const viewport = {
+  themeColor: "#000000",
+  interactiveWidget: "resizes-content",
+};
+
 import Script from "next/script"; // 1. Add this import at the top of your file
 
 export default function RootLayout({

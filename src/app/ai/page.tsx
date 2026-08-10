@@ -814,7 +814,7 @@ const AIAssistance = () => {
             <div className="w-full flex-1 flex flex-col min-h-0 md:max-w-4xl mx-auto px-4">
               {/* Empty State — shown before first message */}
               {messages.length === 0 && !isLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center p-4 pt-24 pb-32 select-none animate-in fade-in duration-700 min-h-0">
+                <div className="flex-1 flex flex-col items-center justify-center p-4 select-none animate-in fade-in duration-700 min-h-0">
                   <div className="flex flex-col items-center gap-5">
                     <Image
                       src="/quransite_white_small.png"
@@ -838,10 +838,13 @@ const AIAssistance = () => {
               {/* Message History — only render when there's content */}
               {(messages.length > 0 || isLoading) && (
                 <div
-                  className="flex-1 w-full overflow-y-auto overscroll-contain touch-pan-y pt-24 pb-32"
+                  className="flex-1 w-full overflow-y-auto overscroll-contain touch-pan-y"
                   style={{ WebkitOverflowScrolling: 'touch' }}
                   onScroll={handleScroll}
                 >
+                  {/* Top spacer so first message clears the absolute header */}
+                  <div className="h-20 md:h-24 w-full shrink-0" />
+                  
                   <ChatMessageList
                     messages={messages}
                     isLoading={isLoading}
@@ -849,7 +852,9 @@ const AIAssistance = () => {
                     toast={toast}
                     toolStatus={toolStatus}
                   />
-                  <div ref={messagesEndRef} className="h-4 w-full shrink-0" />
+                  
+                  {/* Bottom spacer so last message clears the absolute input field */}
+                  <div ref={messagesEndRef} className="h-28 md:h-32 w-full shrink-0" />
                 </div>
               )}
             </div>
