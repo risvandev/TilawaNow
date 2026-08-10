@@ -268,7 +268,7 @@ const AIAssistance = () => {
     // Use rAF to check native height without forcing layout recalculations
     requestAnimationFrame(() => {
       const scrollH = textarea.scrollHeight;
-      
+
       setIsMultiline((prev) => {
         if (scrollH > 44) return true;
         if (textarea.value.length <= 12 && !textarea.value.includes('\n')) return false;
@@ -291,11 +291,11 @@ const AIAssistance = () => {
       try {
         const parsed = JSON.parse(savedChat);
         if (Array.isArray(parsed)) {
-            const safeMessages = parsed.map((m: any) => ({
-                ...m,
-                content: typeof m.content === 'string' ? m.content : (m.content ? JSON.stringify(m.content) : "")
-            }));
-            setMessages(safeMessages);
+          const safeMessages = parsed.map((m: any) => ({
+            ...m,
+            content: typeof m.content === 'string' ? m.content : (m.content ? JSON.stringify(m.content) : "")
+          }));
+          setMessages(safeMessages);
         }
       } catch (e) {
         console.error("Failed to load chat history:", e);
@@ -464,11 +464,11 @@ const AIAssistance = () => {
 
       if (requiredTools && requiredTools.length > 0) {
         let combinedToolResults = "";
-        
+
         for (const tool of requiredTools) {
           if (!tool.tool || !tool.verseKey) continue;
           setToolStatus(getToolStatusMessage(tool.tool));
-          
+
           const result = await executeTextToolCall(tool.tool, tool.verseKey);
           combinedToolResults += `[SYSTEM TOOL EXECUTION: ${tool.tool} for ${tool.verseKey}]\nRESULT:\n${result}\n\n`;
         }
@@ -531,7 +531,7 @@ const AIAssistance = () => {
 
   if (!user) {
     return (
-      <RestrictedAccess 
+      <RestrictedAccess
         title="AI Chat Restricted"
         description="Get explanations, meanings, and guidance while reading."
         icon={Sparkles}
@@ -547,7 +547,7 @@ const AIAssistance = () => {
       )}>
         {/* Bottom White Gradient — visible only on empty initial state */}
         {messages.length === 0 && !isLoading && !showOnboarding && (
-          <div 
+          <div
             className="fixed bottom-0 left-0 right-0 h-[70vh] pointer-events-none z-[1] animate-in fade-in duration-700"
             style={{
               background: "linear-gradient(to top, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.20) 45%, rgba(255, 255, 255, 0.05) 80%, transparent 100%)"
@@ -747,54 +747,54 @@ const AIAssistance = () => {
                     <AlertDialog>
                       <TooltipProvider>
                         <Tooltip>
-                        <TooltipTrigger asChild>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label="Disconnect AI Connection"
-                              className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all"
-                            >
-                              <LogOut className="w-4 h-4 md:w-5 md:h-5" />
-                            </Button>
-                          </AlertDialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="text-xs">
-                          Disconnect AI Connection
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                          <TooltipTrigger asChild>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Disconnect AI Connection"
+                                className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all"
+                              >
+                                <LogOut className="w-4 h-4 md:w-5 md:h-5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="text-xs">
+                            Disconnect AI Connection
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
-                    <AlertDialogContent className="max-w-[90vw] md:max-w-sm rounded-2xl glass-card border-white/10 p-6 pointer-events-auto">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-base md:text-lg font-bold text-foreground">
-                          Disconnect AI?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
-                          Are you sure you want to disconnect? You will need to sign in again to use the AI companion.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter className="flex-row justify-end gap-2 mt-5">
-                        <AlertDialogCancel className="rounded-xl text-xs font-semibold h-9 px-4 mt-0 bg-secondary/50 border-white/10 hover:bg-secondary">
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => {
-                            getPuter()?.auth.signOut();
-                            setIsPuterSignedIn(false);
-                            setShowOnboarding(true);
-                            toast({ title: "Connection Reset", description: "You have disconnected from Puter AI." });
-                          }}
-                          className="rounded-xl text-xs font-semibold h-9 px-4 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Disconnect
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                      <AlertDialogContent className="max-w-[90vw] md:max-w-sm rounded-2xl glass-card border-white/10 p-6 pointer-events-auto">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-base md:text-lg font-bold text-foreground">
+                            Disconnect AI?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
+                            Are you sure you want to disconnect? You will need to sign in again to use the AI companion.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="flex-row justify-end gap-2 mt-5">
+                          <AlertDialogCancel className="rounded-xl text-xs font-semibold h-9 px-4 mt-0 bg-secondary/50 border-white/10 hover:bg-secondary">
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                              getPuter()?.auth.signOut();
+                              setIsPuterSignedIn(false);
+                              setShowOnboarding(true);
+                              toast({ title: "Connection Reset", description: "You have disconnected from Puter AI." });
+                            }}
+                            className="rounded-xl text-xs font-semibold h-9 px-4 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Disconnect
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </div>
-            </div>
 
               {/* Empty State — shown before first message */}
               {messages.length === 0 && !isLoading && (
@@ -821,8 +821,8 @@ const AIAssistance = () => {
 
               {/* Message History — only render when there's content */}
               {(messages.length > 0 || isLoading) && (
-                <div 
-                  className="flex-1 w-full overflow-y-auto overscroll-contain touch-pan-y" 
+                <div
+                  className="flex-1 w-full overflow-y-auto overscroll-contain touch-pan-y"
                   style={{ WebkitOverflowScrolling: 'touch' }}
                   onScroll={handleScroll}
                 >
@@ -937,7 +937,7 @@ const AIAssistance = () => {
                     isMultiline ? "order-1 w-full mb-1" : "order-2 flex-1 items-center"
                   )}>
                     {/* Invisible ghost element that grows natively with text wrap */}
-                    <div 
+                    <div
                       className="col-start-1 row-start-1 invisible whitespace-pre-wrap break-words min-h-[36px] max-h-[160px] w-full py-1.5 px-1 md:py-2 text-base leading-relaxed"
                       aria-hidden="true"
                     >
