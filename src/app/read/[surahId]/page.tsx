@@ -1,5 +1,7 @@
 "use client";
 
+import { MushafPage } from "@/components/MushafPage";
+import { groupMushafPages } from "@/lib/mushaf-layout";
 import { sanitizeTajweedMarkup } from "@/lib/quran-markup";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -835,16 +837,7 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
     });
   }, []);
 
-  const versesByPage = useMemo(() => {
-    return verses.reduce((acc: Record<number, Verse[]>, v) => {
-      const p = v.page_number;
-      if (!acc[p]) acc[p] = [];
-      acc[p].push(v);
-      return acc;
-    }, {});
-  }, [verses]);
-
-  const pages = useMemo(() => Object.entries(versesByPage), [versesByPage]);
+  const pages = useMemo(() => groupMushafPages(verses), [verses]);
 
   const { 
     preheatAudio, 
@@ -1148,7 +1141,7 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
           
           if (isReadMode && readVirtuosoRef.current) {
             const targetVerse = verses[verseIndex];
-            const pageIndex = pages.findIndex(([pageStr]) => parseInt(pageStr) === targetVerse.page_number);
+            const pageIndex = pages.findIndex(({ page }) => page === (targetVerse.words?.[0]?.v2_page || targetVerse.words?.[0]?.page_number || targetVerse.page_number));
             if (pageIndex >= 0) {
               const isFar = Math.abs((lastScrolledVerseIndexRef.current || 0) - pageIndex) > 2;
               readVirtuosoRef.current.scrollToIndex({
@@ -1205,7 +1198,7 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
             // Find which page this verse belongs to
             const targetVerse = verses.find(v => v.verse_key === verseKey);
             if (targetVerse && readVirtuosoRef.current) {
-              const pageIndex = pages.findIndex(([pageStr]) => parseInt(pageStr) === targetVerse.page_number);
+              const pageIndex = pages.findIndex(({ page }) => page === (targetVerse.words?.[0]?.v2_page || targetVerse.words?.[0]?.page_number || targetVerse.page_number));
               if (pageIndex >= 0) {
                 readVirtuosoRef.current.scrollToIndex({
                   index: pageIndex,
@@ -1496,84 +1489,11 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
             data={pages}
             increaseViewportBy={400}
             defaultItemHeight={800}
-            itemContent={(_index, [pageNumber, pageVerses]) => {
-              // Extract all words from this page's verses
-              const allWords = pageVerses.flatMap(verse => {
-                const words = verse.words || [];
-                return words.map(w => ({ ...w, verse }));
-              });
-
-              // Group by line_number
-              const linesMap = new Map<number, typeof allWords>();
-              allWords.forEach(w => {
-                const ln = w.line_number || 1;
-                if (!linesMap.has(ln)) linesMap.set(ln, []);
-                linesMap.get(ln)!.push(w);
-              });
-              const lineNumbers = Array.from(linesMap.keys()).sort((a, b) => a - b);
-
-              return (
-                <div key={pageNumber} className="max-w-4xl mx-auto py-8 md:py-12 mushaf-layout text-foreground relative" dir="rtl">
-                  <div className="flex flex-col w-full">
-                    {lineNumbers.map((lineNum, lineIdx) => {
-                      const words = linesMap.get(lineNum)!;
-                      const isLastLine = lineIdx === lineNumbers.length - 1;
-                      const isFatihaBismillahLine = surahId === 1 && lineIdx === 0;
-                      // Some lines naturally don't stretch fully (e.g., end of surah)
-                      const isCenter = isFatihaBismillahLine;
-
-                      return (
-                        <div 
-                          key={lineNum} 
-                          className={cn(
-                            "flex flex-wrap w-full items-center mb-4 md:mb-6", 
-                            "justify-center gap-x-1.5 md:gap-x-2 lg:gap-x-3"
-                          )}
-                        >
-                          {words.map((w, i) => {
-                            const isFatihaBismillah = surahId === 1 && w.verse.verse_number === 1;
-                            
-                            if (w.char_type_name === "end") {
-                              return (
-                                <span 
-                                  key={w.id}
-                                  className="relative flex items-center justify-center mx-1 md:mx-2 align-middle select-none cursor-pointer group/symbol hover:scale-110 transition-transform duration-200 shrink-0" 
-                                  onClick={(e) => { e.stopPropagation(); handlePlayFromVerseCallback(w.verse.verse_key); }}
-                                >
-                                  <span className="text-foreground/20 text-[1.4em] md:text-[1.8em] group-hover/symbol:text-primary transition-colors duration-200 font-arabic leading-none">۝</span>
-                                  <span className="absolute inset-0 flex items-center justify-center text-[0.45em] md:text-[0.6em] font-sans font-bold text-primary/80 mt-[0.1em]">
-                                    {toArabicNumerals(w.verse.verse_number)}
-                                  </span>
-                                </span>
-                              );
-                            }
-                            
-                            // It's a word or pause
-                            return (
-                              <React.Fragment key={w.id}>
-                                <WordWithMeaning
-                                  word={w}
-                                  verseNumber={w.verse.verse_number}
-                                  showTooltip={false}
-                                  script={quranScript}
-                                  showTransliteration={showTransliteration}
-                                  className={cn(
-                                    "shrink-0",
-                                    isFatihaBismillah ? "text-3xl md:text-5xl" : "text-3xl md:text-[2rem] lg:text-[2.25rem] leading-[2.2]"
-                                  )}
-                                  isHighlighted={currentVerseKey === w.verse.verse_key && currentWordPosition === w.position}
-                                />
-                              </React.Fragment>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-8 pt-4 border-t border-border w-full flex justify-center text-sm font-sans text-muted-foreground select-none">Page {pageNumber}</div>
-                </div>
-              );
-            }}
+            itemContent={(_index, page) => (
+              <MushafPage key={page.page} data={page} script={quranScript}
+                currentVerseKey={currentVerseKey} currentWordPosition={currentWordPosition}
+                onWord={playWordAudio} onVerse={handlePlayFromVerseCallback} />
+            )}
           />
         </div>
       ) : (
