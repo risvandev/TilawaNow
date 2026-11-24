@@ -244,7 +244,7 @@ const AIAssistance = () => {
   // Auto-resizing Textarea Ref
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messageListRef = useRef<HTMLDivElement>(null);
-  const messageListSize = useRef({ viewport: 0, content: 0 });
+  const lastPinnedScrollTop = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const adjustTextareaHeight = () => {
@@ -332,9 +332,10 @@ const AIAssistance = () => {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { clientHeight, scrollHeight, scrollTop } = e.currentTarget;
-    const { viewport, content } = messageListSize.current;
-    if (clientHeight === viewport && scrollHeight === content) {
-      keepLatestVisible.current = scrollHeight - scrollTop - clientHeight < 80;
+    if (scrollHeight - scrollTop - clientHeight < 80) {
+      keepLatestVisible.current = true;
+    } else if (scrollTop < lastPinnedScrollTop.current - 1) {
+      keepLatestVisible.current = false;
     }
   };
 
@@ -343,9 +344,9 @@ const AIAssistance = () => {
     if (!list) return;
 
     const pinLatest = () => {
-      const { clientHeight, scrollHeight } = list;
-      messageListSize.current = { viewport: clientHeight, content: scrollHeight };
-      if (keepLatestVisible.current) list.scrollTo({ top: scrollHeight, behavior: "instant" });
+      if (!keepLatestVisible.current) return;
+      list.scrollTo({ top: list.scrollHeight, behavior: "instant" });
+      lastPinnedScrollTop.current = list.scrollTop;
     };
 
     // The composer and keyboard can resize the transcript without changing its contents.
