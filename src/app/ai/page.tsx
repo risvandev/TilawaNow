@@ -244,6 +244,7 @@ const AIAssistance = () => {
   // Auto-resizing Textarea Ref
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messageListRef = useRef<HTMLDivElement>(null);
+  const messageListSize = useRef({ viewport: 0, content: 0 });
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const adjustTextareaHeight = () => {
@@ -330,8 +331,11 @@ const AIAssistance = () => {
   }, [messages]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    keepLatestVisible.current = target.scrollHeight - target.scrollTop - target.clientHeight < 80;
+    const { clientHeight, scrollHeight, scrollTop } = e.currentTarget;
+    const { viewport, content } = messageListSize.current;
+    if (clientHeight === viewport && scrollHeight === content) {
+      keepLatestVisible.current = scrollHeight - scrollTop - clientHeight < 80;
+    }
   };
 
   useEffect(() => {
@@ -339,7 +343,9 @@ const AIAssistance = () => {
     if (!list) return;
 
     const pinLatest = () => {
-      if (keepLatestVisible.current) list.scrollTo({ top: list.scrollHeight, behavior: "instant" });
+      const { clientHeight, scrollHeight } = list;
+      messageListSize.current = { viewport: clientHeight, content: scrollHeight };
+      if (keepLatestVisible.current) list.scrollTo({ top: scrollHeight, behavior: "instant" });
     };
 
     // The composer and keyboard can resize the transcript without changing its contents.
@@ -822,7 +828,7 @@ const AIAssistance = () => {
                 <div
                   ref={messageListRef}
                   className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain touch-pan-y"
-                  style={{ WebkitOverflowScrolling: 'touch' }}
+                  style={{ WebkitOverflowScrolling: 'touch', overflowAnchor: 'none' }}
                   onScroll={handleScroll}
                 >
                   
