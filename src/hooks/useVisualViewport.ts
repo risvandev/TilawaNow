@@ -1,92 +1,109 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
+interface ViewportSample {
+  width: number;
+  layoutHeight: number;
+  visibleHeight: number;
+  offsetTop: number;
+  scale: number;
+  editing: boolean;
+  touch: boolean;
+}
+
+interface ViewportState {
+  width: number;
+  idleHeight: number;
+  viewportHeight: number;
+  viewportTop: number;
+  isKeyboardVisible: boolean;
+}
+
+const initialViewport: ViewportState = {
+  width: 0,
+  idleHeight: 0,
+  viewportHeight: 0,
+  viewportTop: 0,
+  isKeyboardVisible: false,
+};
+
+export function measureViewport(previous: ViewportState, sample: ViewportSample): ViewportState {
+  const { width, layoutHeight, visibleHeight, offsetTop, scale, editing, touch } = sample;
+  const sameWidth = width === previous.width;
+  const atDefaultScale = Math.abs(scale - 1) < 0.02;
+  const idleHeight = sameWidth ? previous.idleHeight : layoutHeight;
+  const viewportLoss = layoutHeight - visibleHeight;
+  const layoutLoss = idleHeight - layoutHeight;
+  const isKeyboardVisible = touch && atDefaultScale && (editing || (sameWidth && previous.isKeyboardVisible))
+    && Math.max(viewportLoss, layoutLoss) > 100;
+
+  return {
+    width,
+    // Keep the keyboard-closed baseline across every resize event during typing.
+    idleHeight: editing || isKeyboardVisible ? idleHeight : layoutHeight,
+    viewportHeight: isKeyboardVisible ? Math.round(visibleHeight) : 0,
+    viewportTop: isKeyboardVisible ? Math.max(0, Math.round(offsetTop)) : 0,
+    isKeyboardVisible,
+  };
+}
 
 export function useVisualViewport() {
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const [viewportHeight, setViewportHeight] = useState(0);
+  const [state, setState] = useState(initialViewport);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    const viewport = window.visualViewport;
+    const touchPointer = window.matchMedia("(any-pointer: coarse)");
+    let frame = 0;
+    let previous = initialViewport;
 
-    let originalWindowWidth = window.innerWidth;
-    let originalWindowHeight = window.innerHeight;
+    function update() {
+      const focused = document.activeElement;
+      const editing = focused instanceof HTMLElement && (
+        focused.isContentEditable ||
+        (focused instanceof HTMLTextAreaElement && !focused.readOnly && focused.inputMode !== "none") ||
+        (focused instanceof HTMLInputElement && !focused.readOnly && focused.inputMode !== "none"
+          && /^(text|search|url|tel|email|password|number)$/.test(focused.type))
+      );
 
-    function handleViewportChange() {
-      requestAnimationFrame(() => {
-        const vv = window.visualViewport;
-        const currentInnerHeight = window.innerHeight;
-        
-        if (vv) {
-          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-          // Android visualViewport under-reports space by 48px when the system nav bar is active.
-          // window.innerHeight accurately reflects the space above the keyboard on Android.
-          setViewportHeight(isIOS ? vv.height : currentInnerHeight);
-
-          const iosHeightDiff = Math.max(0, currentInnerHeight - vv.height);
-          const androidHeightDiff = Math.max(0, originalWindowHeight - currentInnerHeight);
-
-          if (iosHeightDiff > 100) {
-            // iOS: visualViewport shrank, window did not resize. Transform needed.
-            setKeyboardHeight(iosHeightDiff);
-            setIsKeyboardVisible(true);
-          } else if (androidHeightDiff > 100) {
-            // Android: window resized natively. Flexbox naturally pushes content up.
-            setKeyboardHeight(0);
-            setIsKeyboardVisible(true);
-          } else if (vv.offsetTop > 0 && iosHeightDiff < 50) {
-            // iOS edge case offset
-            setKeyboardHeight(Math.min(vv.offsetTop, currentInnerHeight * 0.5));
-            setIsKeyboardVisible(true);
-          } else {
-            setKeyboardHeight(0);
-            setIsKeyboardVisible(false);
-          }
-        } else {
-          // Fallback for older browsers
-          const heightDiff = Math.max(0, originalWindowHeight - currentInnerHeight);
-          setViewportHeight(currentInnerHeight);
-          if (heightDiff > 100) {
-            setKeyboardHeight(heightDiff);
-            setIsKeyboardVisible(true);
-          } else {
-            setKeyboardHeight(0);
-            setIsKeyboardVisible(false);
-          }
-        }
+      const next = measureViewport(previous, {
+        width: window.innerWidth,
+        layoutHeight: window.innerHeight,
+        visibleHeight: viewport?.height ?? window.innerHeight,
+        offsetTop: viewport?.offsetTop ?? 0,
+        scale: viewport?.scale ?? 1,
+        editing,
+        touch: touchPointer.matches || navigator.maxTouchPoints > 0,
       });
-    }
 
-    function handleWindowResize() {
-      // Only reset original height if width changed significantly (orientation change/split screen)
-      // Ignoring minor width changes (like scrollbars appearing/disappearing) which are < 50px
-      if (Math.abs(window.innerWidth - originalWindowWidth) > 50) {
-        originalWindowWidth = window.innerWidth;
-        originalWindowHeight = window.innerHeight;
+      if (next.isKeyboardVisible !== previous.isKeyboardVisible ||
+          next.viewportHeight !== previous.viewportHeight || next.viewportTop !== previous.viewportTop) {
+        setState(next);
       }
-      handleViewportChange();
+      previous = next;
     }
 
-    // Initial setup
-    originalWindowWidth = window.innerWidth;
-    originalWindowHeight = window.innerHeight;
-    setViewportHeight(window.visualViewport ? window.visualViewport.height : window.innerHeight);
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", handleViewportChange);
-      window.visualViewport.addEventListener("scroll", handleViewportChange);
+    function scheduleUpdate() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(update);
     }
-    window.addEventListener("resize", handleWindowResize);
+
+    update();
+    viewport?.addEventListener("resize", scheduleUpdate);
+    viewport?.addEventListener("scroll", scheduleUpdate);
+    window.addEventListener("resize", scheduleUpdate);
+    document.addEventListener("focusin", scheduleUpdate);
+    document.addEventListener("focusout", scheduleUpdate);
 
     return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener("resize", handleViewportChange);
-        window.visualViewport.removeEventListener("scroll", handleViewportChange);
-      }
-      window.removeEventListener("resize", handleWindowResize);
+      cancelAnimationFrame(frame);
+      viewport?.removeEventListener("resize", scheduleUpdate);
+      viewport?.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+      document.removeEventListener("focusin", scheduleUpdate);
+      document.removeEventListener("focusout", scheduleUpdate);
     };
-  }, [isKeyboardVisible]);
+  }, []);
 
-  return { keyboardHeight, isKeyboardVisible, viewportHeight };
+  return state;
 }

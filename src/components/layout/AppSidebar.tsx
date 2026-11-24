@@ -1,5 +1,5 @@
 "use client";
-import { useState, createContext, useContext, ReactNode, useEffect } from "react";
+import { useState, createContext, useContext, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -184,9 +184,8 @@ interface MainLayoutProps {
   showSidebar?: boolean;
 }
 
-const MobileBottomNav = () => {
+const MobileBottomNav = ({ docked }: { docked: boolean }) => {
   const pathname = usePathname();
-  const { isKeyboardVisible } = useVisualViewport();
 
   const mobileNavItems = [
     { icon: Home, label: "Home", path: "/home" },
@@ -196,10 +195,11 @@ const MobileBottomNav = () => {
     { icon: Settings, label: "Settings", path: "/settings" },
   ];
 
-  if (isKeyboardVisible) return null;
-
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-16 pb-[env(safe-area-inset-bottom)] bg-background border-t border-border z-[100] md:hidden flex items-center justify-around px-1">
+    <nav aria-label="Mobile navigation" className={cn(
+      "h-16 pb-[env(safe-area-inset-bottom)] bg-background border-t border-border z-[100] md:hidden flex items-center justify-around px-1",
+      docked ? "shrink-0" : "fixed bottom-0 left-0 right-0"
+    )}>
       {mobileNavItems.map((item) => {
         const isActive = pathname === item.path ||
           (item.path === "/read" && pathname.startsWith("/read"));
@@ -219,7 +219,7 @@ const MobileBottomNav = () => {
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 };
 
@@ -235,12 +235,7 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
   const pagesWithNoGlobalPadding = ["/home", "/about", "/contact", "/help", "/ai"];
   const requiresGlobalPadding = !pagesWithNoGlobalPadding.includes(pathname);
   const isFullViewportPage = pathname === "/ai";
-  const { viewportHeight } = useVisualViewport();
-
-  const [isIOS, setIsIOS] = useState(false);
-  useEffect(() => {
-    setIsIOS(typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent));
-  }, []);
+  const { isKeyboardVisible, viewportHeight, viewportTop } = useVisualViewport();
 
   if (!showSidebar) {
     return <main className="min-h-screen">{children}</main>;
@@ -250,22 +245,19 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
     <div 
       className={cn(
         "flex w-full bg-background selection:bg-primary/20",
-        isFullViewportPage ? "fixed inset-0 overflow-hidden" : "min-h-[100dvh]"
+        isFullViewportPage ? "fixed inset-0 flex-col overflow-hidden md:flex-row" : "min-h-[100dvh]"
       )}
-      style={isFullViewportPage && viewportHeight && isIOS ? { height: `${viewportHeight}px`, bottom: 'auto' } : {}}
+      style={isFullViewportPage && viewportHeight ? { height: viewportHeight, top: viewportTop, bottom: 'auto' } : undefined}
     >
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <AppSidebar />
       </div>
 
-      {/* Mobile Bottom Nav */}
-      <MobileBottomNav />
-
       <main
         className={cn(
           "flex-1 transition-all duration-300 flex flex-col relative",
-          isFullViewportPage && "h-full overflow-hidden",
+          isFullViewportPage && "min-h-0 min-w-0 overflow-hidden",
           "ml-0 md:ml-16", // Base mobile: no margin, Base desktop: collapsed margin
           shouldShowExpanded && "md:ml-56", // Expanded desktop margin
           requiresGlobalPadding && (isPlayerActive ? "pb-36 md:pb-0" : "pb-16 md:pb-0"), // Padding ONLY for pages that don't handle their own
@@ -274,6 +266,7 @@ export const MainLayout = ({ children, showSidebar = true }: MainLayoutProps) =>
       >
         {children}
       </main>
+      {!isKeyboardVisible && <MobileBottomNav docked={isFullViewportPage} />}
     </div>
   );
 };
