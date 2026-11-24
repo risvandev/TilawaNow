@@ -4,6 +4,7 @@
  * Licensed under the GNU Affero General Public License v3.0.
  */
 
+import { readChatReply, replyText } from "./chat-reply";
 import getPuter from "./puter-service";
 import { fetchTafsir, fetchSingleVerse, fetchSurahOverview, TAFSIR_RESOURCES } from "./quran-api";
 
@@ -92,7 +93,7 @@ Valid tools: get_arabic_text, get_translation, get_tafsir, get_surah_info. Verse
 
         const chatOptions = { model: 'gpt-4o-mini', stream: false };
         const response = (await puter.ai.chat(routerMessages, chatOptions)) as any;
-        const resultText = response?.message?.content || response?.text || "[]";
+        const resultText = replyText(response) || "[]";
         
         try {
             // Find JSON array in the response (sometimes the model wraps in markdown)
@@ -121,34 +122,13 @@ export const streamChatWithAI = async (
 ): Promise<void> => {
     if (typeof window === "undefined") return;
 
-    try {
-        const puter = getPuter();
-        if (!puter) throw new Error("Puter.js SDK not initialized");
+    abortSignal?.throwIfAborted();
+    const puter = getPuter();
+    if (!puter) throw new Error("Puter.js SDK not initialized");
 
-        const isAdvanced = options.mode !== 'Quick';
-        const model = isAdvanced ? 'gpt-4o' : 'gpt-4o-mini';
-
-        const chatOptions: any = { model, stream: true };
-
-        const responseStream = (await puter.ai.chat(messages, chatOptions)) as any;
-
-        if (responseStream && typeof responseStream[Symbol.asyncIterator] === 'function') {
-            for await (const part of responseStream) {
-                if (abortSignal?.aborted) break;
-                const text = part?.text || part?.message?.content || part?.delta?.content || (typeof part === 'string' ? part : '');
-                if (text) onChunk(text);
-            }
-        } else if (responseStream?.message?.content || responseStream?.text) {
-            if (!abortSignal?.aborted) {
-                onChunk(responseStream.message?.content || responseStream.text || "");
-            }
-        }
-
-    } catch (error: any) {
-        console.error("AI Stream Error:", error);
-        onChunk("\n\n[Connection interrupted. Please try again.]");
-        throw error;
-    }
+    const model = options.mode === "Quick" ? "gpt-4o-mini" : "gpt-4o";
+    const response = await puter.ai.chat(messages, { model, stream: true });
+    await readChatReply(response, onChunk, abortSignal);
 };
 
 /**
