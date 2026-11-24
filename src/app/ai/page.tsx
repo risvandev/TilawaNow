@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Send,
   ArrowRight,
+  ArrowDown,
   Info,
   ChevronDown,
   X,
@@ -25,7 +26,6 @@ import {
 
 import getPuter from "@/lib/puter-service";
 import {
-  chatWithAI,
   streamChatWithAI,
   ChatMessage,
   generateCompanionSystemPrompt,
@@ -134,7 +134,7 @@ const ChatMessageList = memo(({
   toolStatus: string | null;
 }) => {
   return (
-    <div className="space-y-8 py-4 md:py-6">
+    <div className="mx-auto max-w-3xl space-y-5 px-4 py-4 sm:px-6 md:space-y-7 md:py-6">
       {messages.map((message, index) => {
         if (message.role === "assistant" && !message.content && isLoading && index === messages.length - 1) {
           return (
@@ -160,22 +160,25 @@ const ChatMessageList = memo(({
           );
         }
 
-        if (message.role === "assistant" && !message.content) return null;
+        if (message.role === "assistant" && !message.content) {
+          return <p key={index} role="status" className="rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm text-foreground">No reply was received. Send your question again to retry.</p>;
+        }
 
         return (
           <div key={index} id={`message-${index}`} className={cn(
-            "flex animate-in fade-in slide-in-from-bottom-4 duration-500",
+            "flex min-w-0",
             message.role === "user" ? "justify-end gap-4" : "justify-start gap-0"
           )}>
             <div className={cn(
-              "rounded-2xl py-3 px-5",
+              "min-w-0 rounded-2xl [overflow-wrap:anywhere]",
               message.role === "user"
-                ? "max-w-[90%] md:max-w-[80%] bg-secondary text-foreground rounded-3xl rounded-tr-md shadow-sm"
-                : "w-full px-0 bg-transparent border-none shadow-none py-4"
+                ? "max-w-[90%] md:max-w-[80%] bg-secondary px-4 py-2.5 text-foreground rounded-3xl rounded-tr-md shadow-sm"
+                : "w-full px-0 bg-transparent border-none shadow-none py-1"
             )}>
               <div className="text-sm md:text-base leading-relaxed selection:bg-primary/30">
                 {message.role === "assistant" ? (
                   <div className="ai-response-content">
+                    <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground"><Sparkles aria-hidden="true" className="size-4" />TilawaNow AI</div>
                     {isLoading && index === messages.length - 1 && toolStatus && (
                       <div className="flex items-center text-sm font-medium text-muted-foreground mb-3 w-fit ml-2">
                         <span>{toolStatus.replace(/\.+$/, "")}</span>
@@ -188,6 +191,7 @@ const ChatMessageList = memo(({
                     {message.role === "assistant" && message.content && !isLoading && (
                       <div className="flex justify-start mt-4 pt-2 border-t border-primary/5">
                         <Button
+                          aria-label="Copy reply"
                           variant="ghost"
                           size="sm"
                           className="h-8 gap-2 text-[10px] font-bold text-muted-foreground hover:text-primary transition-all rounded-lg group/copy"
@@ -239,6 +243,7 @@ const AIAssistance = () => {
   // Puter State
   const [isPuterSignedIn, setIsPuterSignedIn] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showJump, setShowJump] = useState(false);
   const keepLatestVisible = useRef(true);
 
   // Auto-resizing Textarea Ref
@@ -332,6 +337,7 @@ const AIAssistance = () => {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { clientHeight, scrollHeight, scrollTop } = e.currentTarget;
+    setShowJump(scrollHeight - scrollTop - clientHeight >= 80);
     if (scrollHeight - scrollTop - clientHeight < 80) {
       keepLatestVisible.current = true;
     } else if (scrollTop < lastPinnedScrollTop.current - 1) {
@@ -428,6 +434,8 @@ const AIAssistance = () => {
 
     const mode = forceMode || chatMode;
     setInput("");
+    setShowJump(false);
+    setToolStatus(null);
 
     let finalMessage = userMessage;
     if (quotedText) {
@@ -463,10 +471,12 @@ const AIAssistance = () => {
       const contextOpts = { mode, verseKey: currentContext.verseKey || undefined };
       const requiredTools = await determineRequiredTools(chatHistory, contextOpts);
 
+      if (abortController.signal.aborted) return;
       if (requiredTools && requiredTools.length > 0) {
         let combinedToolResults = "";
 
         for (const tool of requiredTools) {
+          if (abortController.signal.aborted) return;
           if (!tool.tool || !tool.verseKey) continue;
           setToolStatus(getToolStatusMessage(tool.tool));
 
@@ -482,6 +492,7 @@ const AIAssistance = () => {
         }
       }
 
+      if (abortController.signal.aborted) return;
       setToolStatus(null);
 
       // 2. VISIBLE CONVERSATIONAL STREAM
@@ -504,6 +515,7 @@ const AIAssistance = () => {
         abortController.signal
       );
 
+      if (abortController.signal.aborted) return;
       const navMatch = fullResponse.match(/\[\[NAVIGATE:\s*(.*?)\s*\]\]/);
       const targetPath = navMatch ? getAssistantPath(navMatch[1]) : null;
       if (targetPath) {
@@ -512,6 +524,7 @@ const AIAssistance = () => {
       }
 
     } catch (error: any) {
+      if (abortController.signal.aborted) return;
       const errMsg = error?.message ? (typeof error.message === 'string' ? error.message : JSON.stringify(error.message)) : "An unexpected error occurred.";
       toast({ variant: "destructive", title: "Error", description: errMsg });
 
@@ -524,7 +537,11 @@ const AIAssistance = () => {
         toast({ title: "Session Expired", description: "Please connect your Puter account again." });
       }
     } finally {
-      setIsLoading(false);
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null;
+        setIsLoading(false);
+        setToolStatus(null);
+      }
     }
   };
 
@@ -546,16 +563,6 @@ const AIAssistance = () => {
         "relative w-full flex-1 min-h-0 flex flex-col overflow-hidden bg-background",
         showOnboarding && "items-center justify-center p-4"
       )}>
-        {/* Bottom White Gradient — visible only on empty initial state */}
-        {messages.length === 0 && !isLoading && !showOnboarding && (
-          <div
-            className="absolute bottom-0 left-0 right-0 h-[70%] pointer-events-none z-[1] animate-in fade-in duration-700"
-            style={{
-              background: "linear-gradient(to top, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.20) 45%, rgba(255, 255, 255, 0.05) 80%, transparent 100%)"
-            }}
-          />
-        )}
-
         {/* Floating Follow-up Button */}
         {selectionPopup && (
           <div
@@ -625,7 +632,7 @@ const AIAssistance = () => {
           /* Unlocked State - Full AI Interface */
           <div className="w-full flex-1 flex flex-col min-h-0 relative">
             {/* Chat Timeline */}
-            <div className="hidden lg:flex absolute right-2 xl:right-10 top-1/2 -translate-y-1/2 max-h-[60%] overflow-y-auto overscroll-contain flex-col items-center gap-2 z-30 p-1 py-2">
+            <div className="ai-scroll hidden lg:flex absolute right-2 xl:right-10 top-1/2 -translate-y-1/2 max-h-[60%] overflow-y-auto overscroll-contain flex-col items-center gap-2 z-30 p-1 py-2">
               {timelineNodes.map((node, i) => (
                 <Tooltip key={i} delayDuration={50}>
                   <TooltipTrigger asChild>
@@ -664,6 +671,7 @@ const AIAssistance = () => {
                             <Button
                               variant="ghost"
                               size="icon"
+                              disabled={isLoading}
                               aria-label="Start New Chat"
                               onClick={() => {
                                 sessionStorage.removeItem("tilawanow_chat_history");
@@ -688,7 +696,8 @@ const AIAssistance = () => {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  aria-label="Start New Chat"
+                                  disabled={isLoading}
+                              aria-label="Start New Chat"
                                   className="h-8 w-8 md:h-10 md:w-10 rounded-full hover:bg-primary/10 hover:text-primary text-muted-foreground transition-all"
                                 >
                                   <MessageSquarePlus className="w-4 h-4 md:w-5 md:h-5" />
@@ -800,7 +809,7 @@ const AIAssistance = () => {
               </div>
             </div>
 
-            <div className="w-full flex-1 flex flex-col min-h-0 md:max-w-4xl mx-auto px-4 lg:px-12 xl:px-4">
+            <div className="relative w-full min-w-0 flex-1 flex flex-col min-h-0 lg:px-12">
               {/* Empty State — shown before first message */}
               {messages.length === 0 && !isLoading && (
                 <div className="flex-1 flex flex-col items-center justify-center p-4 select-none animate-in fade-in duration-700 min-h-0 overflow-hidden">
@@ -828,7 +837,10 @@ const AIAssistance = () => {
               {(messages.length > 0 || isLoading) && (
                 <div
                   ref={messageListRef}
-                  className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain touch-pan-y"
+                  aria-label="Conversation"
+                  role="region"
+                  tabIndex={0}
+                  className="ai-scroll flex-1 min-h-0 w-full overflow-y-auto overscroll-contain touch-pan-y"
                   style={{ WebkitOverflowScrolling: 'touch', overflowAnchor: 'none' }}
                   onScroll={handleScroll}
                 >
@@ -842,6 +854,18 @@ const AIAssistance = () => {
                   />
                   
                 </div>
+              )}
+              {hasConversation && showJump && (
+                <Button size="sm" variant="secondary" className="absolute bottom-2 self-center rounded-full border border-border shadow-md" onClick={() => {
+                  const list = messageListRef.current;
+                  if (!list) return;
+                  keepLatestVisible.current = true;
+                  list.scrollTop = list.scrollHeight;
+                  lastPinnedScrollTop.current = list.scrollTop;
+                  setShowJump(false);
+                }}>
+                  <ArrowDown className="size-4" /> Latest reply
+                </Button>
               )}
             </div>
 
@@ -892,7 +916,7 @@ const AIAssistance = () => {
                 <div className={cn(
                   "relative glass-card rounded-[1.5rem] md:rounded-[1.75rem] p-2 md:p-3 shadow-2xl backdrop-blur-3xl transition-all flex flex-row flex-wrap items-end gap-2",
                   messages.length === 0 && !isLoading
-                    ? "bg-[#121212]/98 border border-white/15 focus-within:border-white/40"
+                    ? "bg-secondary border border-border focus-within:border-primary/50"
                     : "bg-secondary/95 border border-border/40 focus-within:border-primary/40"
                 )}>
                   {/* Left: Mode Selector Dropdown */}
@@ -940,7 +964,7 @@ const AIAssistance = () => {
                   {/* Middle: Native Auto-expanding Textarea via CSS Grid */}
                   <div className={cn(
                     "relative grid transition-all",
-                    isMultiline ? "order-1 w-full mb-1" : "order-2 flex-1 items-center"
+                    isMultiline ? "order-1 w-full mb-1" : "order-2 min-w-0 flex-1 items-center"
                   )}>
                     {/* Invisible ghost element that grows natively with text wrap */}
                     <div
@@ -964,7 +988,7 @@ const AIAssistance = () => {
                           handleSend();
                         }
                       }}
-                      className="col-start-1 row-start-1 h-full min-h-[36px] max-h-[min(160px,24dvh)] w-full bg-transparent border-0 border-none shadow-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus:outline-none resize-none py-1.5 px-1 md:py-2 text-base text-foreground font-medium placeholder:text-muted-foreground/40 disabled:opacity-50 leading-relaxed scrollbar-hide overflow-y-auto touch-pan-y overscroll-none will-change-[height]"
+                      className="col-start-1 row-start-1 h-full min-h-[36px] max-h-[min(160px,24dvh)] w-full bg-transparent border-0 border-none shadow-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus:outline-none resize-none py-1.5 px-1 md:py-2 text-base text-foreground font-medium placeholder:text-muted-foreground disabled:opacity-50 leading-relaxed scrollbar-hide overflow-y-auto touch-pan-y overscroll-none will-change-[height]"
                     />
                   </div>
 
@@ -979,6 +1003,8 @@ const AIAssistance = () => {
                       aria-label="Stop Generating"
                       onClick={() => {
                         abortControllerRef.current?.abort();
+                        abortControllerRef.current = null;
+                        setMessages(prev => prev.at(-1)?.role === "assistant" && !prev.at(-1)?.content ? prev.slice(0, -1) : prev);
                         setIsLoading(false);
                       }}
                       className={cn(
