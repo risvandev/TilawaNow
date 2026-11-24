@@ -1,5 +1,6 @@
 "use client";
 
+import { sanitizeTajweedMarkup } from "@/lib/quran-markup";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -39,7 +40,6 @@ import {
 } from "@/lib/quran-api";
 import { 
   useSurahs,
-  useSurahMetadata,
   useVerses,
   useVerseAudios,
   usePriorityAudios,
@@ -208,7 +208,7 @@ const WordWithMeaning = React.memo(({
         e.stopPropagation();
         playWordAudio(word.audio_url);
       }}
-      dangerouslySetInnerHTML={script === "text_uthmani_tajweed" ? { __html: arabicText } : undefined}
+      dangerouslySetInnerHTML={script === "text_uthmani_tajweed" ? { __html: sanitizeTajweedMarkup(arabicText) } : undefined}
     >
       {script !== "text_uthmani_tajweed" ? arabicText : undefined}
     </span>
@@ -531,11 +531,11 @@ const VerseRow = React.memo(({
 });
 
 // Surah List Component
-const SurahList = () => {
+const SurahList = ({ initialQuery }: { initialQuery: string }) => {
   const { prefetchSurahData } = usePrefetch();
-  const { data: surahs = [], isLoading: isSurahsLoading } = useSurahs();
+  const { data: surahs = [], isLoading: isSurahsLoading, isError, refetch } = useSurahs();
   const { toggleMark, isMarked } = useBookmarks();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const { isKhatmahActive, currentProgress, isLoading: isKhatmahLoading, startKhatmah, stopKhatmah, restartKhatmah } = useKhatmah();
   const router = useRouter();
   const { isExpanded } = useSidebar();
@@ -555,6 +555,15 @@ const SurahList = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError && !surahs.length) {
+    return (
+      <div role="alert" className="container mx-auto px-6 py-8 text-center">
+        <p>Could not load the Surah list.</p>
+        <Button variant="outline" className="mt-4" onClick={() => refetch()}>Try again</Button>
       </div>
     );
   }
@@ -639,6 +648,7 @@ const SurahList = () => {
           <Search className="absolute left-5 w-5 h-5 text-muted-foreground group-focus-within/search:text-primary transition-colors" />
           <Input
             type="text"
+            aria-label="Search Surahs"
             placeholder="Search Surahs..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -647,6 +657,7 @@ const SurahList = () => {
         </div>
       </div>
 
+      {filteredSurahs.length === 0 && <p role="status" className="text-center">No Surahs match your search.</p>}
       <VirtuosoGrid
         useWindowScroll
         data={filteredSurahs}
@@ -798,14 +809,15 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
   });
 
   const { user } = useAuth();
-  const surah = useSurahMetadata(surahId);
+  const chapters = useSurahs();
+  const surah = chapters.data?.find((chapter) => chapter.id === surahId);
   const { data: userReadingProfile } = useUserReadingProfile(user?.id);
   const { data: priorityAudios } = usePriorityAudios(surahId);
-  const { data: versesData, isLoading: isVersesLoading } = useVerses(surahId, parseInt(translationId), quranScript, wbwLanguage);
+  const { data: versesData, isLoading: isVersesLoading, refetch: refetchVerses } = useVerses(surahId, parseInt(translationId), quranScript, wbwLanguage);
   const verses = versesData?.verses || [];
-  const { data: verseAudios = new Map(), isLoading: isAudiosLoading } = useVerseAudios(surahId);
+  const { data: verseAudios = new Map() } = useVerseAudios(surahId);
 
-  const loading = isVersesLoading || isAudiosLoading;
+  const loading = isVersesLoading || chapters.isLoading;
 
   const combinedAudios = useMemo(() => {
     const map = new Map(verseAudios);
@@ -1320,6 +1332,18 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
     );
   }
 
+  if (chapters.isError || (surah && !verses.length)) {
+    return (
+      <div role="alert" className="container mx-auto px-6 py-8 text-center">
+        <p>Could not load this Surah. Check your connection and try again.</p>
+        <Button variant="outline" className="mt-4" onClick={() => {
+          if (chapters.isError) void chapters.refetch();
+          else void refetchVerses();
+        }}>Try again</Button>
+      </div>
+    );
+  }
+
   if (!surah) {
     return (
       <div className="container mx-auto px-6 py-8 text-center">
@@ -1339,7 +1363,7 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
       <div className="mb-6 md:mb-8 px-4 md:px-0">
         {/* Navigation & Actions Bar */}
         <div className="flex items-center justify-between mb-6 md:mb-8 bg-secondary/30 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none rounded-[2rem] md:rounded-none p-2 md:p-0 border border-white/10 md:border-transparent shadow-lg shadow-black/20 md:shadow-none animate-fade-in-up mt-2 md:mt-0">
-          <Link href="/read" className="flex items-center justify-center w-10 h-10 rounded-full bg-secondary/50 border border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-all shrink-0">
+          <Link href="/read" aria-label="Back to Surahs" className="flex items-center justify-center w-10 h-10 rounded-full bg-secondary/50 border border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-all shrink-0">
             <ChevronLeft className="w-5 h-5" />
           </Link>
 
@@ -1623,13 +1647,14 @@ const SurahReader = ({ surahId }: { surahId: number }) => {
 };
 
 const ReadQuran = () => {
+  const query = useSearchParams().get("q")?.trim() ?? "";
   const { surahId } = useParams();
   if (surahId) {
     const sIdStr = Array.isArray(surahId) ? surahId[0] : surahId;
-    const sId = parseInt(sIdStr);
+    const sId = /^\d+$/.test(sIdStr) ? Number(sIdStr) : 0;
     return <SurahReader key={sId} surahId={sId} />;
   }
-  return <SurahList />;
+  return <SurahList key={query} initialQuery={query} />;
 };
 
 export default ReadQuran;

@@ -81,14 +81,11 @@ const BASE_URL = "https://api.quran.com/api/v4";
 
 // Fetch all surahs
 export const fetchSurahs = async (): Promise<Surah[]> => {
-  try {
-    const response = await fetch(`${BASE_URL}/chapters`);
-    const data = await response.json();
-    return data.chapters;
-  } catch (error) {
-    console.error("Error fetching surahs:", error);
-    return [];
-  }
+  const response = await fetch(`${BASE_URL}/chapters`, { signal: AbortSignal.timeout(10_000) });
+  if (!response.ok) throw new Error("Could not load the Surah list");
+  const data = await response.json();
+  if (!Array.isArray(data.chapters) || data.chapters.length === 0) throw new Error("Invalid Surah list");
+  return data.chapters;
 };
 
 // Fetch single surah details
@@ -164,9 +161,12 @@ export const fetchVerses = async (
       "text_uthmani";
 
     const response = await fetch(
-      `${BASE_URL}/verses/by_chapter/${surahNumber}?language=${wbwLanguage}&word_translation_language=${wbwLanguage}&words=true&word_fields=${scriptField},audio_url,line_number,page_number&translations=${translationId}&fields=${scriptField}&per_page=${perPage}&page=${page}`
+      `${BASE_URL}/verses/by_chapter/${surahNumber}?language=${wbwLanguage}&word_translation_language=${wbwLanguage}&words=true&word_fields=${scriptField},audio_url,line_number,page_number&translations=${translationId}&fields=${scriptField}&per_page=${perPage}&page=${page}`,
+      { signal: AbortSignal.timeout(15_000) }
     );
+    if (!response.ok) throw new Error("Could not load verses");
     const data = await response.json();
+    if (!Array.isArray(data.verses) || data.verses.length === 0) throw new Error("Invalid verse response");
     return {
       verses: data.verses,
       pagination: data.pagination,
@@ -225,7 +225,8 @@ export const fetchChapterVerseAudios = async (
     // Use the verses endpoint with ?audio= param — this is the ONLY endpoint
     // that returns word-level timing segments for highlighting
     const response = await fetch(
-      `${BASE_URL}/verses/by_chapter/${surahNumber}?audio=${reciterId}&per_page=${perPage}&fields=text_uthmani`
+      `${BASE_URL}/verses/by_chapter/${surahNumber}?audio=${reciterId}&per_page=${perPage}&fields=text_uthmani`,
+      { signal: AbortSignal.timeout(10_000) }
     );
     const data = await response.json();
     if (data.verses) {
@@ -241,7 +242,6 @@ export const fetchChapterVerseAudios = async (
         }
       });
     }
-    console.log(`[AudioFetch] Loaded ${audioMap.size} verses for Surah ${surahNumber}, Reciter ${reciterId}. Segments: ${audioMap.values().next().value?.segments?.length || 0} for first verse.`);
   } catch (error) {
     console.error("Error fetching chapter verse audios:", error);
   }
@@ -307,23 +307,19 @@ export const fetchTranslations = async () => {
   }
 };
 
-// Search verses
-export const searchVerses = async (
-  query: string,
-  size: number = 10,
-  page: number = 1
-) => {
-  try {
-    const response = await fetch(
-      `${BASE_URL}/search?q=${encodeURIComponent(query)}&size=${size}&page=${page}`
-    );
-    const data = await response.json();
-    return data.search;
-  } catch (error) {
-    console.error("Error searching verses:", error);
-    return { results: [], total_results: 0 };
-  }
-};
+export interface VerseSearchResult {
+  verse_key: string;
+  text: string;
+  translations?: { text: string }[];
+}
+
+export async function searchVerses(query: string, signal: AbortSignal): Promise<VerseSearchResult[]> {
+  const params = new URLSearchParams({ q: query, size: "5", page: "1" });
+  const response = await fetch(`${BASE_URL}/search?${params}`, { signal });
+  if (!response.ok) throw new Error("Could not search Quran verses");
+  const data = await response.json();
+  return Array.isArray(data.search?.results) ? data.search.results : [];
+}
 
 // Recommended Tafsir Resource IDs (from Quran.com API v4)
 export const TAFSIR_RESOURCES = {

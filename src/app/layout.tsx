@@ -5,6 +5,7 @@
  */
 
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter } from "next/font/google";
 import "@/index.css";
 import { Providers } from "@/components/Providers";
@@ -27,14 +28,14 @@ export const metadata: Metadata = {
     description: "A modern Quran platform to read, listen, and understand the Quran with clarity and ease.",
     url: "https://tilawanow.vercel.app",
     siteName: "TilawaNow",
-    images: ["/og-image.png"],
+    images: ["/hero_section.webp"],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "TilawaNow",
     description: "Read, listen, and reflect on the Holy Quran through a modern and respectful digital experience.",
-    images: ["/og-image.png"],
+    images: ["/hero_section.webp"],
   },
   verification: {
     google: "ocIOVZe3l3sNdnDfLVN2NRpcLTvCQXF1MY37V4slakk",
@@ -46,8 +47,6 @@ export const viewport = {
   themeColor: "#000000",
   interactiveWidget: "resizes-content",
 };
-
-import Script from "next/script"; // 1. Add this import at the top of your file
 
 export default function RootLayout({
   children,
@@ -61,7 +60,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://api.quran.com" />
         <link rel="dns-prefetch" href="https://verses.quran.com" />
         <link rel="dns-prefetch" href="https://api.quran.com" />
-        <link rel="preload" as="image" href="/hero_section.webp" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <Providers>
@@ -69,10 +67,6 @@ export default function RootLayout({
         </Providers>
         <Analytics />
 
-        {/* Load Razorpay globally */}
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-
-        {/* 2. Add the Google Search Brand Schema right here */}
         <Script
           id="schema-org-branding"
           type="application/ld+json"

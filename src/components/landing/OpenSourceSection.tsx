@@ -55,7 +55,7 @@ export const OpenSourceSection = () => {
           {/* Right Side: Micro Text & Features */}
           <div className="flex-1 md:max-w-[420px] w-full border-t md:border-t-0 md:border-l border-border/40 pt-10 md:pt-4 md:pl-16 flex flex-col justify-center">
             <p className="text-sm md:text-[13px] text-muted-foreground/80 leading-relaxed font-medium mb-10 text-center md:text-left tracking-wide">
-              TilawaNow is 100% open-source and transparent. We believe the tools for reading and understanding the <span className="text-foreground font-semibold">Holy Qur'an</span> should be accessible to everyone, everywhere. No ads, no tracking.
+              TilawaNow is 100% open-source and transparent. We believe the tools for reading and understanding the <span className="text-foreground font-semibold">Holy Qur'an</span> should be accessible to everyone, everywhere. No ads.
             </p>
             
             <div className="grid grid-cols-2 gap-y-8 gap-x-4 opacity-80">

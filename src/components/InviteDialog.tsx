@@ -14,6 +14,7 @@ import { Mail, Share2, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export function InviteDialog() {
     const [email, setEmail] = useState("");
@@ -29,14 +30,13 @@ export function InviteDialog() {
 
         setIsSending(true);
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error("Sign in to send email invitations.");
+
             const response = await fetch("/api/invite", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    to_email: email,
-                    from_name: user?.user_metadata?.full_name || user?.email || "A friend",
-                    invite_link: inviteLink,
-                }),
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+                body: JSON.stringify({ to_email: email }),
             });
 
             const data = await response.json();
@@ -50,11 +50,11 @@ export function InviteDialog() {
             } else {
                 throw new Error(data.error || "Failed to send invite");
             }
-        } catch (error: any) {
+        } catch (error) {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: error.message || "Something went wrong. Please try again.",
+                description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
             });
         } finally {
             setIsSending(false);
@@ -114,7 +114,8 @@ export function InviteDialog() {
                     </div>
                 </div>
 
-                <form onSubmit={handleEmailInvite} className="space-y-4">
+                {user ? (
+                    <form onSubmit={handleEmailInvite} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="email">Friend's Email</Label>
                         <div className="relative">
@@ -136,6 +137,9 @@ export function InviteDialog() {
                         </Button>
                     </DialogFooter>
                 </form>
+                ) : (
+                    <p className="text-sm text-muted-foreground">Sign in to send an email invitation, or copy the link above.</p>
+                )}
             </DialogContent>
         </Dialog>
     );

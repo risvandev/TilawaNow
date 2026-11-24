@@ -1,3 +1,4 @@
+import { sanitizeQuranMarkup } from "@/lib/quran-markup";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
@@ -55,7 +56,7 @@ export function VerseTafsirModal({ isOpen, onClose, verseKey, tafsirId, verseTex
               </div>
             ) : tafsirData ? (
               <div 
-                dangerouslySetInnerHTML={{ __html: tafsirData.text }} 
+                dangerouslySetInnerHTML={{ __html: sanitizeQuranMarkup(tafsirData.text) }}
                 className="tafsir-content"
                 dir={tafsirId === "16" || tafsirId === "91" || tafsirId === "14" || tafsirId === "164" ? "rtl" : "ltr"}
               />

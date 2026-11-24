@@ -10,7 +10,7 @@ export const CTASection = () => {
           Begin Your <span className="text-premium-accent">Journey</span> Today
         </h2>
         <p className="text-base md:text-lg text-cta-foreground/80 max-w-xl mx-auto mb-8">
-          Join thousands who have made the <span className="text-premium-accent font-semibold">Quran</span> a part of their daily life.
+          Make the <span className="text-premium-accent font-semibold">Quran</span> a part of your daily life.
           No account needed — start reading in seconds.
         </p>
         <Button asChild variant="cta" size="lg" className="max-md:h-10 max-md:px-6 max-md:text-sm">

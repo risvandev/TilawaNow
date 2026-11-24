@@ -24,32 +24,12 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://tilawanow.vercel.app/story</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://tilawanow.vercel.app/info</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://tilawanow.vercel.app/focus</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://tilawanow.vercel.app/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
-  <url>
-    <loc>https://tilawanow.vercel.app/help</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
 
-  <!-- Legal & Auth -->
+  <!-- Legal -->
   <url>
     <loc>https://tilawanow.vercel.app/privacy</loc>
     <changefreq>yearly</changefreq>
@@ -58,16 +38,6 @@
   <url>
     <loc>https://tilawanow.vercel.app/terms</loc>
     <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://tilawanow.vercel.app/login</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://tilawanow.vercel.app/signup</loc>
-    <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
 

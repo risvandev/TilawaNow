@@ -1,55 +1,41 @@
-// TilawaNow Service Worker - PWA Support
-const CACHE_NAME = 'tilawanow-v1';
+const CACHE_NAME = "tilawanow-static-v2";
 
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
+self.addEventListener("install", () => self.skipWaiting());
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil((async () => {
+    const names = await caches.keys();
+    await Promise.all(names.filter((name) =>
+      name === "tilawanow-v1" || (name.startsWith("tilawanow-static-") && name !== CACHE_NAME)
+    ).map((name) => caches.delete(name)));
+    await self.clients.claim();
+  })());
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('[Service Worker] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => clients.claim())
-  );
-});
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+  if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
-  if (event.request.method !== 'GET') return;
+  if (request.mode === "navigate") {
+    event.respondWith(fetch(request).catch(() => new Response(
+      "You’re offline. Reconnect to continue reading on TilawaNow.",
+      { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } },
+    )));
+    return;
+  }
 
-  // Skip non-http(s) requests
-  if (!event.request.url.startsWith('http')) return;
+  // Only content-addressed public assets are safe to reuse across sessions.
+  if (!url.pathname.startsWith("/_next/static/")) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
+    if (cached) return cached;
 
-  // Network-first strategy: try network, fall back to cache
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Check if we received a valid response
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-
-        // Clone the response because it's a stream and can only be consumed once
-        const responseToCache = response.clone();
-
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request).then((cached) => {
-          // Return cached response or a simple offline fallback
-          return cached || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
-        });
-      })
-  );
+    const response = await fetch(request);
+    if (response.ok && response.type === "basic") {
+      await cache.put(request, response.clone()).catch(() => undefined);
+    }
+    return response;
+  })());
 });

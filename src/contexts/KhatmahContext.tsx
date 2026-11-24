@@ -96,7 +96,6 @@ export const KhatmahProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 }
 
                 if (data) {
-                    // @ts-ignore
                     setCurrentProgress(data);
                 }
             } catch (err) {

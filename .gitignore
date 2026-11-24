@@ -43,3 +43,9 @@ lerna-debug.log*
 
 test_api*.json
 ml.json
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Next.js generated types
+next-env.d.ts

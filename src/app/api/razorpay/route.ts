@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
+import { createRateLimiter, donationInput, getRateLimitKey, readJson } from "@/lib/request-validation";
+
+const isRateLimited = createRateLimiter(10, 60 * 1000);
 
 // Plan IDs mapped from environment variables
 const PLAN_IDS: Record<string, Record<number, string | undefined>> = {
@@ -30,13 +33,16 @@ const PLAN_IDS: Record<string, Record<number, string | undefined>> = {
 };
 
 export async function POST(req: Request) {
+  const parsed = donationInput.safeParse(await readJson(req));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid donation amount, currency, or payment type." }, { status: 400 });
+  }
+  if (isRateLimited(getRateLimitKey(req))) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  }
+
+  const { amount, currency, donationType, useFallback } = parsed.data;
   try {
-    const { amount, currency = "INR", donationType = "one-time", useFallback = false } = await req.json();
-
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
-    }
-
     const key_id = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     const key_secret = process.env.RAZORPAY_KEY_SECRET;
 
@@ -44,7 +50,7 @@ export async function POST(req: Request) {
       console.error("Razorpay keys are missing from environment variables");
       return NextResponse.json(
         { error: "Payment gateway configuration error" },
-        { status: 500 }
+        { status: 503 }
       );
     }
 
@@ -118,12 +124,11 @@ export async function POST(req: Request) {
         });
       }
     }
-  } catch (error: any) {
-    console.error("Razorpay Order Creation Error:", error);
-    const errorMessage = error?.error?.description || error.message || "Could not create payment session. Please try again.";
+  } catch {
+    console.error("Razorpay session creation failed");
     return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
+      { error: "Could not create a payment session. Please try again." },
+      { status: 502 }
     );
   }
 }
