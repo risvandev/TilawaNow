@@ -1,20 +1,24 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { getImageProps } from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { User, Search, BookOpen, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
 import { useSurahs } from "@/hooks/use-quran-queries";
-import { searchVerses } from "@/lib/quran-api";
+import { searchVerses, type VerseSearchResult } from "@/lib/quran-api";
 import Fuse from "fuse.js";
+
+const heroImage = { alt: "", width: 1584, height: 672, sizes: "100vw", quality: 75 };
+const { props: desktopHero } = getImageProps({ ...heroImage, src: "/hero_section.webp" });
+const { props: mobileHero } = getImageProps({ ...heroImage, src: "/hero_section.webp_mobile.webp" });
 
 export const HeroSection = () => {
   const { user } = useAuth();
   const { data: surahs = [] } = useSurahs();
   const [searchQuery, setSearchQuery] = useState("");
-  const [verseResults, setVerseResults] = useState<any[]>([]);
+  const [verseResults, setVerseResults] = useState<VerseSearchResult[]>([]);
   const [isLoadingVerses, setIsLoadingVerses] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -38,7 +42,7 @@ export const HeroSection = () => {
       const ayahId = parseInt(match[2]);
       if (surahId >= 1 && surahId <= 114) {
         const surah = surahs.find(s => s.id === surahId);
-        if (surah) {
+        if (surah && ayahId >= 1 && ayahId <= surah.verses_count) {
           return { surah, ayahId };
         }
       }
@@ -49,24 +53,27 @@ export const HeroSection = () => {
 
   // Debounced API call for verse search
   useEffect(() => {
-    if (searchQuery.trim().length < 3) {
-      setVerseResults([]);
-      return;
-    }
-    const delayDebounce = setTimeout(async () => {
+    const query = searchQuery.trim();
+    setVerseResults([]);
+    setIsLoadingVerses(false);
+    if (query.length < 3 || /^\d+:\d+$/.test(query)) return;
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
       setIsLoadingVerses(true);
       try {
-        const res = await searchVerses(searchQuery.trim());
-        if (res && res.results) {
-          setVerseResults(res.results.slice(0, 5));
-        }
-      } catch (err) {
-        console.error(err);
+        const results = await searchVerses(query, controller.signal);
+        if (!controller.signal.aborted) setVerseResults(results);
+      } catch {
+        // Chapter matches remain available if verse search is unavailable.
       } finally {
-        setIsLoadingVerses(false);
+        if (!controller.signal.aborted) setIsLoadingVerses(false);
       }
     }, 400);
-    return () => clearTimeout(delayDebounce);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [searchQuery]);
 
   // Click outside listener to close dropdown
@@ -123,24 +130,10 @@ export const HeroSection = () => {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
       {/* Background Image with Overlay */}
       <div className="absolute left-0 right-0 top-20 md:top-24 bottom-[55%] md:bottom-[50%] z-0">
-        <Image
-          src="/hero_section.webp_mobile.webp"
-          alt="Quran Background"
-          fill
-          priority
-          className="object-cover opacity-45 md:hidden"
-          sizes="(max-width: 767px) 100vw, 0vw"
-          quality={90}
-        />
-        <Image
-          src="/hero_section.webp"
-          alt="Quran Background"
-          fill
-          priority
-          className="object-cover opacity-45 hidden md:block"
-          sizes="(min-width: 768px) 100vw, 0vw"
-          quality={90}
-        />
+        <picture>
+          <source media="(max-width: 767px)" srcSet={mobileHero.srcSet} sizes={mobileHero.sizes} />
+          <img {...desktopHero} fetchPriority="high" className="absolute inset-0 h-full w-full object-cover opacity-45" />
+        </picture>
       </div>
 
       {/* Navbar */}
@@ -193,13 +186,16 @@ export const HeroSection = () => {
             <Search className="absolute left-4 w-4 h-4 md:w-5 md:h-5 text-muted-foreground/50 group-hover:text-muted-foreground/80 transition-colors duration-300" />
             <input
               type="text"
+              aria-label="Search the Quran"
               placeholder={placeholder}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
+                setVerseResults([]);
                 setIsDropdownOpen(true);
               }}
               onFocus={() => setIsDropdownOpen(true)}
+              onKeyDown={(event) => { if (event.key === "Escape") setIsDropdownOpen(false); }}
               className="w-full bg-black hover:bg-black/95 focus:bg-black text-foreground placeholder:text-muted-foreground/45 border border-border/70 rounded-full py-3.5 pl-11 pr-11 md:py-4 md:pl-13 md:pr-13 text-xs md:text-sm font-medium tracking-wide focus:outline-none focus:border-foreground/20 focus:ring-4 focus:ring-foreground/5 transition-all duration-300 shadow-xl shadow-black/25"
             />
             {isLoadingVerses && (
@@ -273,7 +269,7 @@ export const HeroSection = () => {
                       const surahMeta = surahs.find(s => s.id === surahId);
                       return (
                         <button
-                          key={verse.verse_id || idx}
+                          key={verse.verse_key || idx}
                           type="button"
                           onClick={() => {
                             router.push(`/read/${surahId}?ayah=${ayahId}`);

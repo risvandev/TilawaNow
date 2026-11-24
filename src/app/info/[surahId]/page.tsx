@@ -1,5 +1,6 @@
 "use client";
 
+import { sanitizeQuranMarkup } from "@/lib/quran-markup";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -105,7 +106,7 @@ const SurahInfoPage = () => {
                         <section className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
                             <div 
                                 className="markdown-content quran-info-content max-w-none prose prose-invert prose-primary"
-                                dangerouslySetInnerHTML={{ __html: infoText }}
+                                dangerouslySetInnerHTML={{ __html: sanitizeQuranMarkup(infoText) }}
                             />
                         </section>
                     ) : (

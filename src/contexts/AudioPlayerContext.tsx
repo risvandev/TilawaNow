@@ -216,7 +216,7 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 if (tabId === tabIdRef.current) return; // Ignore own messages
 
                 switch (type) {
-                    case 'PLAY':
+                    case 'PLAY': {
                         // Another tab started playing, pause this one
                         const audio = getActiveAudio();
                         if (audio && !audio.paused) {
@@ -224,6 +224,7 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
                             setIsPlaying(false);
                         }
                         break;
+                    }
                     case 'TRACK_CHANGE':
                         // Update display info from the active tab
                         if (payload.surah) setCurrentSurah(payload.surah);
@@ -709,7 +710,7 @@ export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }, []);
 
     const playSurah = useCallback((surah: Surah, verses: Verse[], startVerseKey?: string) => {
-        let finalVerses = [...verses];
+        const finalVerses = [...verses];
         
         // Inject Bismillah for Surahs that start with it (excluding Al-Fatihah since it's already Verse 1, and At-Tawbah which doesn't have it)
         if (surah.bismillah_pre && surah.id !== 1 && surah.id !== 9) {

@@ -29,7 +29,7 @@ export const ReadingTrackerProvider: React.FC<{ children: React.ReactNode }> = (
     // If we've already permanently logged this verse during this session, no need to do anything further
     if (loggedVerses.current.has(key)) return;
 
-    let current = visibilityTimes.current.get(key) || { duration: 0, lastUpdated: now };
+    const current = visibilityTimes.current.get(key) || { duration: 0, lastUpdated: now };
     let shouldLog = false;
 
     if (type === "interaction") {

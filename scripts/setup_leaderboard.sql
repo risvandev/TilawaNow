@@ -17,6 +17,7 @@ RETURNS TABLE (
 LANGUAGE sql
 SECURITY DEFINER  -- Runs with the function owner's privileges, bypasses RLS safely
 STABLE
+SET search_path = pg_catalog
 AS $$
     SELECT 
         p.id,

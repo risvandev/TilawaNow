@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { getAssistantPath } from "@/lib/assistant-navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -133,16 +134,6 @@ PRINCIPLE: You are a Technical Guide, not a Sheikh. Do not interpret the Quran. 
 
 END OF SYSTEM PROMPT`;
 
-const sanitizePath = (path: string) => {
-  let rawPath = path.split("|")[0];
-  let cleaned = rawPath.trim().toLowerCase();
-  
-  if (!cleaned.startsWith("/") && !cleaned.startsWith("http")) {
-    cleaned = "/" + cleaned;
-  }
-  return cleaned;
-};
-
 const MessageWithOffers = ({ content, onNavigate }: { content: string, onNavigate: (path: string, label: string) => void }) => {
   const offerRegex = /\[\[OFFER_NAVIGATE:\s*(.*?)\s*\|\s*(.*?)\s*\]\]/g;
   const cleanText = (content || "").replace(offerRegex, "").trim();
@@ -150,7 +141,8 @@ const MessageWithOffers = ({ content, onNavigate }: { content: string, onNavigat
   
   const matches = Array.from((content || "").matchAll(offerRegex));
   matches.forEach(match => {
-    offers.push({ path: match[1], label: match[2] });
+    const path = getAssistantPath(match[1]);
+    if (path) offers.push({ path, label: match[2] });
   });
 
   return (
@@ -185,16 +177,6 @@ const HelpSupport = () => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
 
-  if (!user) {
-    return (
-      <RestrictedAccess 
-        title="Support Restricted"
-        description="Sign in to access personalized support and AI assistance."
-        icon={HelpCircle}
-      />
-    );
-  }
-
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
@@ -204,6 +186,16 @@ const HelpSupport = () => {
   ]);
   const [chatInput, setChatInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  if (!user) {
+    return (
+      <RestrictedAccess
+        title="Support Restricted"
+        description="Sign in to access personalized support and AI assistance."
+        icon={HelpCircle}
+      />
+    );
+  }
 
   const filteredFaqs = faqs.filter(
     (faq) =>
@@ -252,8 +244,8 @@ const HelpSupport = () => {
 
       // Handle Navigation
       const navMatch = responseContent.match(/\[\[NAVIGATE:\s*(.*?)\s*\]\]/);
-      if (navMatch && navMatch[1]) {
-        const targetPath = sanitizePath(navMatch[1]);
+      const targetPath = navMatch ? getAssistantPath(navMatch[1]) : null;
+      if (targetPath) {
         toast({ title: "Auto-Navigating", description: `Opening ${targetPath}...` });
         setTimeout(() => navigate.push(targetPath), 1000);
       }
@@ -384,7 +376,8 @@ const HelpSupport = () => {
                       <MessageWithOffers 
                         content={message.content} 
                         onNavigate={(path, label) => {
-                          const target = sanitizePath(path);
+                          const target = getAssistantPath(path);
+                          if (!target) return;
                           toast({ title: "Redirecting", description: `Opening ${label} (${target})...` });
                           navigate.push(target);
                         }} 

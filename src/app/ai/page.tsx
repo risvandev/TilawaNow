@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, memo } from "react";
 import ReactMarkdown from "react-markdown";
+import { getAssistantPath } from "@/lib/assistant-navigation";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -85,17 +86,6 @@ STRICT PROTOCOL:
 - Do NOT start your response with "Wa Alaikum Assalam" or other greetings unless the user explicitly greeted you in their message.
 `;
 
-const sanitizePath = (path: string) => {
-  // If the AI mixed formats and included a pipe (e.g. /path|Label)
-  let rawPath = path.split("|")[0];
-  let cleaned = rawPath.trim().toLowerCase();
-
-  if (!cleaned.startsWith("/") && !cleaned.startsWith("http")) {
-    cleaned = "/" + cleaned;
-  }
-  return cleaned;
-};
-
 const MessageWithOffers = ({ content, onNavigate }: { content: string, onNavigate: (path: string, label: string) => void }) => {
   const offerRegex = /\[\[OFFER_NAVIGATE:\s*(.*?)\s*\|\s*(.*?)\s*\]\]/g;
   const cleanText = (content || "").replace(offerRegex, "").trim();
@@ -103,7 +93,8 @@ const MessageWithOffers = ({ content, onNavigate }: { content: string, onNavigat
 
   const matches = Array.from((content || "").matchAll(offerRegex));
   matches.forEach(match => {
-    offers.push({ path: match[1], label: match[2] });
+    const path = getAssistantPath(match[1]);
+    if (path) offers.push({ path, label: match[2] });
   });
 
   return (
@@ -433,7 +424,8 @@ const AIAssistance = () => {
   };
 
   const executeNavigation = (path: string, label: string) => {
-    const targetPath = sanitizePath(path);
+    const targetPath = getAssistantPath(path);
+    if (!targetPath) return;
     toast({ title: "Redirecting", description: `Opening ${label} (${targetPath})...` });
     router.push(targetPath);
   };
@@ -473,7 +465,7 @@ const AIAssistance = () => {
 
       setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
-      let chatHistory = [{ role: "system", content: fullSystemPrompt } as ChatMessage, ...newMessages.slice(-5)];
+      const chatHistory = [{ role: "system", content: fullSystemPrompt } as ChatMessage, ...newMessages.slice(-5)];
 
       // 1. PRE-FLIGHT TOOL CHECK
       const contextOpts = { mode, verseKey: currentContext.verseKey || undefined };
@@ -510,7 +502,7 @@ const AIAssistance = () => {
             const updated = [...prev];
             const lastIndex = updated.length - 1;
             if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
-              let displayContent = fullResponse.replace(/\[\[NAVIGATE:.*?\]\]/g, "").trim();
+              const displayContent = fullResponse.replace(/\[\[NAVIGATE:.*?\]\]/g, "").trim();
               updated[lastIndex] = { ...updated[lastIndex], content: displayContent };
             }
             return updated;
@@ -521,8 +513,8 @@ const AIAssistance = () => {
       );
 
       const navMatch = fullResponse.match(/\[\[NAVIGATE:\s*(.*?)\s*\]\]/);
-      if (navMatch && navMatch[1]) {
-        const targetPath = sanitizePath(navMatch[1]);
+      const targetPath = navMatch ? getAssistantPath(navMatch[1]) : null;
+      if (targetPath) {
         toast({ title: "Auto-Navigating", description: `Taking you to ${targetPath}...` });
         setTimeout(() => router.push(targetPath), 1000);
       }

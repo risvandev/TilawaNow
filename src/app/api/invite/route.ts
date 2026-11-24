@@ -1,87 +1,45 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { createMailer, escapeHtml } from "@/lib/mail";
+import { createRateLimiter, getRateLimitKey, inviteInput, readJson } from "@/lib/request-validation";
+import { supabase } from "@/lib/supabase";
 
-// --- Rate Limiting (in-memory, per-instance) ---
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-const RATE_LIMIT_MAX = 3; // max 3 invites per window per IP
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-    return false;
-  }
-  entry.count++;
-  return entry.count > RATE_LIMIT_MAX;
-}
-
-// --- HTML Sanitization ---
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+const isRateLimited = createRateLimiter(3, 15 * 60 * 1000);
+const isIpRateLimited = createRateLimiter(15, 15 * 60 * 1000);
+const siteUrl = "https://tilawanow.vercel.app";
 
 export async function POST(req: Request) {
+  const parsed = inviteInput.safeParse(await readJson(req));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Enter a valid recipient email address." }, { status: 400 });
+  }
+
+  const token = req.headers.get("authorization")?.match(/^Bearer ([^\s]+)$/i)?.[1];
+  if (!token) return NextResponse.json({ error: "Sign in to send email invitations." }, { status: 401 });
+
+  if (isIpRateLimited(getRateLimitKey(req))) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  }
+
   try {
-    // Rate limit by IP
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    if (isRateLimited(ip)) {
-      return NextResponse.json(
-        { error: "Too many requests. Please try again later." },
-        { status: 429 }
-      );
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) {
+      return NextResponse.json({ error: "Sign in again to send an invitation." }, { status: 401 });
+    }
+    if (isRateLimited(user.id)) {
+      return NextResponse.json({ error: "Too many invitations. Please try again later." }, { status: 429 });
     }
 
-    const { to_email, from_name, invite_link } = await req.json();
-
-    if (!to_email || !from_name) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+    const mailer = createMailer();
+    if (!mailer) {
+      return NextResponse.json({ error: "Email invitations are temporarily unavailable." }, { status: 503 });
     }
 
-    // Basic email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(to_email)) {
-      return NextResponse.json(
-        { error: "Invalid email address" },
-        { status: 400 }
-      );
-    }
-
-    // Validate invite_link
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "tilawanow.vercel.app";
-    // Ensure the link is internal or to the allowed domain
-    if (invite_link && !invite_link.includes(siteUrl) && !invite_link.startsWith('/')) {
-        return NextResponse.json(
-            { error: "Invalid invite link domain" },
-            { status: 400 }
-        );
-    }
-
-    // Sanitize user inputs
-    const safeFromName = escapeHtml(from_name);
-    // invite_link is sanitized by construction or validation above, but let's be safe if it's used in text
-    const safeInviteLink = invite_link ? escapeHtml(invite_link) : `https://${siteUrl}/account`;
-
-    // SMTP Configuration from environment variables
-    const port = Number(process.env.SMTP_PORT) || 587;
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: port,
-      secure: port === 465 || process.env.SMTP_SECURE === "true",
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    const { transport, address } = mailer;
+    const { to_email } = parsed.data;
+    const fullName = user.user_metadata.full_name;
+    const safeFromName = escapeHtml(typeof fullName === "string" && fullName.trim() ? fullName.trim().slice(0, 100) : "A friend");
+    const safeInviteLink = `${siteUrl}/account`;
+    const iconUrl = `${siteUrl}/icon-512.png`;
 
     // Email HTML Template
     const htmlContent = `
@@ -96,7 +54,7 @@ export async function POST(req: Request) {
   <div style="max-width: 500px; margin: 0; text-align: left;">
     
     <!-- Logo -->
-    <img src="https://${siteUrl}/icon%20for%20app.png" alt="TilawaNow" width="48" height="48" style="display: block; margin-bottom: 24px; border-radius: 12px;">
+    <img src="${iconUrl}" alt="TilawaNow" width="48" height="48" style="display: block; margin-bottom: 24px; border-radius: 12px;">
     
     <!-- Heading -->
     <h1 style="color: #000000; font-size: 28px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.5px;">You've been invited.</h1>
@@ -131,16 +89,16 @@ export async function POST(req: Request) {
     `;
 
     // Send email
-    await transporter.sendMail({
-      from: `"TilawaNow" <${process.env.SMTP_USER}>`,
-      to: to_email,
-      subject: `${safeFromName} invited you to TilawaNow`,
+    await transport.sendMail({
+      from: { name: "TilawaNow", address },
+      to: { address: to_email, name: "" },
+      subject: "You’ve been invited to TilawaNow",
       html: htmlContent,
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error("Email API error:", error);
+  } catch {
+    console.error("Invitation delivery failed");
     return NextResponse.json(
       { error: "Failed to send email" },
       { status: 500 }

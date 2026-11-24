@@ -2,7 +2,7 @@
 
 [![Vercel Deployment](https://img.shields.io/badge/Deployment-Vercel-black?style=flat-square&logo=vercel)](https://tilawanow.vercel.app)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/agpl-3.0)
-[![Next.js](https://img.shields.io/badge/Framework-Next.js%2014-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Framework-Next.js%2016-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 
 **TilawaNow** is a production-grade, open-source Quranic platform built for high-performance reading, analysis, and progress auditing. It integrates modern AI grounding with classical scholarship to provide a distraction-free environment for serious study.
 
@@ -39,7 +39,7 @@ TilawaNow is a technical solution to a common problem: digital Quran platforms o
 
 TilawaNow is built with a focus on scalability and maintainability:
 
-- **Frontend**: Next.js 14 (App Router) with React Server Components for optimal SEO and initial load performance.
+- **Frontend**: Next.js 16 (App Router) with React Server Components for optimal SEO and initial load performance.
 - **State Management**: Context-based architecture (Auth, UI state) to ensure consistency across the player and reader.
 - **AI Pipeline**: Custom service layer integrating **Puter.js** for browser-side LLM interaction and for advanced models.
 - **Database**: Supabase PostgreSQL with **Row Level Security (RLS)** ensuring every data point is owned and accessible only by the user.
@@ -49,7 +49,7 @@ TilawaNow is built with a focus on scalability and maintainability:
 
 | Layer | Technology |
 | :--- | :--- |
-| **Framework** | Next.js 14 |
+| **Framework** | Next.js 16 |
 | **Language** | TypeScript |
 | **Database/Auth** | Supabase |
 | **AI SDK** | Puter.js |
@@ -60,9 +60,9 @@ TilawaNow is built with a focus on scalability and maintainability:
 ## ⚙️ Local Setup
 
 ### Prerequisites
-- Node.js 18.x or higher
-- A Supabase Project (URL and Anon Key)
-- SMTP Credentials (for contact/invites)
+- Node.js 24.x
+- A Supabase project for sign-in and synced reading progress
+- Optional SMTP credentials for contact and invitations
 
 ### Installation
 
@@ -74,18 +74,18 @@ TilawaNow is built with a focus on scalability and maintainability:
 
 2. **Install dependencies**
    ```bash
-   npm install
+   npm ci
    ```
 
 3. **Configure Environment Variables**
-   Create a `.env` file in the root directory, copy the contents from `.env.example`, and paste your actual credentials:
+   Create a `.env.local` file in the root directory, copy the contents from `.env.example`, and paste your actual credentials:
    ```bash
-   cp .env.example .env
+   cp .env.example .env.local
    ```
 
 ### 🗄️ Database Setup (Required)
 
-TilawaNow relies on a structured Supabase database for authentication, performance auditing, and persistence. The application will not function correctly without initializing the schema.
+TilawaNow relies on a structured Supabase database for authentication, performance auditing, and persistence. Guest reading uses the Quran.com API. Sign-in and synced progress require the Supabase schema.
 
 #### What it configures:
 - **User Authentication**: Custom profile management linked to Supabase Auth.
@@ -103,8 +103,8 @@ TilawaNow relies on a structured Supabase database for authentication, performan
 
 #### Key Tables Created:
 - `profiles` → Core user data.
-- `reading_sessions` → High-level session tracking.
-- `reading_activity` → Granular, ayah-level interaction data.
+- `reading_history` → Most recent reading position per chapter.
+- `daily_activity`, `verses_read`, `marks`, and `khatmah_progress` → Reading stats and progress.
 
 > Row Level Security (RLS) is enabled by default in the script. Failure to run this will result in `403 Forbidden` or `Empty Result` errors across the application.
 
@@ -116,13 +116,24 @@ If you plan to use the Leaderboard feature, you will also need to run its setup 
 This is required specifically for the **Contact Form** and **Invite** features. (Note: Supabase Auth emails are managed separately in the Supabase Dashboard).
 
 To enable these features, configure your SMTP provider (e.g., Resend, Mailtrap) in your `.env` file:
-- **Sender Details**: Set `SMTP_FROM_EMAIL` and `SMTP_FROM_NAME`.
 - **Provider Settings**: Fill in `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, and `SMTP_PASS`.
 
 ### 4. Run Development Server
 ```bash
 npm run dev
 ```
+
+### Production checks
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm audit
+```
+
+Use a preview deployment to check Supabase sign-in and progress sync, Puter chat, SMTP delivery, and Razorpay checkout in test mode. Configure deployment-level rate limits for `/api/contact`, `/api/invite`, and `/api/razorpay` to enforce limits across serverless instances.
 
 ## 📄 License
 
