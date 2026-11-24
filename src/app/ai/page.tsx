@@ -44,7 +44,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSidebar } from "@/components/layout/AppSidebar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,7 +62,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { useVisualViewport } from "@/hooks/useVisualViewport";
 
 const QURAN_EXPERT_PROMPT = `SYSTEM PROMPT — TilawaNow Islamic Assistant
 
@@ -136,7 +134,7 @@ const ChatMessageList = memo(({
   toolStatus: string | null;
 }) => {
   return (
-    <div className="space-y-8 pt-20 md:pt-24 pb-40 md:pb-32">
+    <div className="space-y-8 py-4 md:py-6">
       {messages.map((message, index) => {
         if (message.role === "assistant" && !message.content && isLoading && index === messages.length - 1) {
           return (
@@ -222,8 +220,6 @@ const AIAssistance = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { currentContext, userAIMemory } = useAICompanion();
-  const { isExpanded, isHovered } = useSidebar();
-  const shouldShowExpanded = isExpanded || isHovered;
 
   // AI Modes & State
   const [chatMode, setChatMode] = useState<AIChatMode>("Quick");
@@ -240,34 +236,15 @@ const AIAssistance = () => {
   const [quotedText, setQuotedText] = useState<string | null>(null);
   const [selectionPopup, setSelectionPopup] = useState<{ text: string, x: number, y: number } | null>(null);
 
-  // Lock body scrolling strictly to prevent mobile browser visual viewport panning
-  useEffect(() => {
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.width = "100%";
-    document.body.style.height = "100%";
-
-    return () => {
-      document.documentElement.style.overflow = "";
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.width = "";
-      document.body.style.height = "";
-    };
-  }, []);
-
   // Puter State
   const [isPuterSignedIn, setIsPuterSignedIn] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
+  const keepLatestVisible = useRef(true);
 
   // Auto-resizing Textarea Ref
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  const { isKeyboardVisible, viewportHeight } = useVisualViewport();
 
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
@@ -345,6 +322,7 @@ const AIAssistance = () => {
     }
   }, [mounted, toast]);
 
+  const hasConversation = messages.length > 0 || isLoading;
   const timelineNodes = useMemo(() => {
     return (messages || [])
       .map((msg, idx) => ({ ...msg, originalIndex: idx }))
@@ -353,17 +331,24 @@ const AIAssistance = () => {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
-    if (!target) return;
-    // If the user scrolls up from the bottom of the container, disable auto-scroll
-    const isScrolledUp = target.clientHeight + target.scrollTop < target.scrollHeight - 150;
-    setAutoScrollEnabled(!isScrolledUp);
+    keepLatestVisible.current = target.scrollHeight - target.scrollTop - target.clientHeight < 80;
   };
 
   useEffect(() => {
-    if (mounted && autoScrollEnabled && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-  }, [messages, isLoading, mounted, autoScrollEnabled]);
+    const list = messageListRef.current;
+    if (!list) return;
+
+    const pinLatest = () => {
+      if (keepLatestVisible.current) list.scrollTo({ top: list.scrollHeight, behavior: "instant" });
+    };
+
+    // The composer and keyboard can resize the transcript without changing its contents.
+    const observer = new ResizeObserver(pinLatest);
+    observer.observe(list);
+    if (list.firstElementChild) observer.observe(list.firstElementChild);
+    pinLatest();
+    return () => observer.disconnect();
+  }, [mounted, user, showOnboarding, hasConversation]);
 
   // Handle Text Selection for Contextual Follow-up
   useEffect(() => {
@@ -446,7 +431,7 @@ const AIAssistance = () => {
     const newMessages: ChatMessage[] = [...messages, { role: "user", content: finalMessage }];
     setMessages(newMessages);
     setIsLoading(true);
-    setAutoScrollEnabled(true); // Force scroll to bottom for new messages
+    keepLatestVisible.current = true;
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -551,13 +536,13 @@ const AIAssistance = () => {
   return (
     <TooltipProvider>
       <div className={cn(
-        "relative w-full h-full flex flex-col overflow-hidden bg-background transition-all duration-700",
+        "relative w-full flex-1 min-h-0 flex flex-col overflow-hidden bg-background",
         showOnboarding && "items-center justify-center p-4"
       )}>
         {/* Bottom White Gradient — visible only on empty initial state */}
         {messages.length === 0 && !isLoading && !showOnboarding && (
           <div
-            className="fixed bottom-0 left-0 right-0 h-[70vh] pointer-events-none z-[1] animate-in fade-in duration-700"
+            className="absolute bottom-0 left-0 right-0 h-[70%] pointer-events-none z-[1] animate-in fade-in duration-700"
             style={{
               background: "linear-gradient(to top, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.20) 45%, rgba(255, 255, 255, 0.05) 80%, transparent 100%)"
             }}
@@ -598,7 +583,7 @@ const AIAssistance = () => {
 
         {showOnboarding ? (
           /* Minimalist Auth Gate */
-          <div className="max-w-sm w-full mx-auto text-center space-y-8 animate-fade-in-up relative px-6">
+          <div className="max-w-sm max-h-full w-full mx-auto text-center space-y-8 overflow-y-auto animate-fade-in-up relative px-6">
             <div className="absolute -inset-20 bg-primary/5 rounded-full blur-[100px] opacity-20 pointer-events-none" />
 
             <div className="flex items-center justify-center mx-auto mb-4 opacity-80">
@@ -633,16 +618,21 @@ const AIAssistance = () => {
           /* Unlocked State - Full AI Interface */
           <div className="w-full flex-1 flex flex-col min-h-0 relative">
             {/* Chat Timeline */}
-            <div className="hidden lg:flex fixed right-10 top-1/2 -translate-y-1/2 flex-col items-center gap-2 z-30 py-2">
+            <div className="hidden lg:flex absolute right-2 xl:right-10 top-1/2 -translate-y-1/2 max-h-[60%] overflow-y-auto overscroll-contain flex-col items-center gap-2 z-30 p-1 py-2">
               {timelineNodes.map((node, i) => (
                 <Tooltip key={i} delayDuration={50}>
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => {
                         const el = document.getElementById(`message-${node.originalIndex}`);
-                        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        const list = messageListRef.current;
+                        if (!list || !el) return;
+                        keepLatestVisible.current = false;
+                        const offset = el.getBoundingClientRect().top - list.getBoundingClientRect().top;
+                        list.scrollTo({ top: list.scrollTop + offset - (list.clientHeight - el.offsetHeight) / 2, behavior: "smooth" });
                       }}
-                      className="w-6 h-6 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all hover:scale-110 active:scale-90 group"
+                      aria-label={`Jump to prompt ${i + 1}`}
+                      className="w-6 h-6 shrink-0 rounded-full hover:bg-primary/10 flex items-center justify-center transition-all hover:scale-110 active:scale-90 group"
                     >
                       <span className="text-primary text-[10px] font-bold opacity-40 group-hover:opacity-100 transition-opacity">—</span>
                     </button>
@@ -655,7 +645,7 @@ const AIAssistance = () => {
             </div>
             {/* Top Header */}
             <div className={cn(
-              "absolute top-0 left-0 right-0 z-40 bg-gradient-to-b from-background via-background/95 to-transparent pt-4 md:pt-6 pb-8 md:pb-12 px-6 md:px-12 lg:px-24 xl:px-48 animate-in fade-in slide-in-from-top-4 duration-500 transition-all pointer-events-none"
+              "relative shrink-0 z-40 bg-background pt-3 pb-2 md:pt-5 md:pb-3 px-6 md:px-12 lg:px-24 xl:px-48"
             )}>
               <div className="flex items-center justify-between pointer-events-auto">
                 <div className="flex-1 flex justify-start">
@@ -803,10 +793,10 @@ const AIAssistance = () => {
               </div>
             </div>
 
-            <div className="w-full flex-1 flex flex-col min-h-0 md:max-w-4xl mx-auto px-4">
+            <div className="w-full flex-1 flex flex-col min-h-0 md:max-w-4xl mx-auto px-4 lg:px-12 xl:px-4">
               {/* Empty State — shown before first message */}
               {messages.length === 0 && !isLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center p-4 select-none animate-in fade-in duration-700 min-h-0">
+                <div className="flex-1 flex flex-col items-center justify-center p-4 select-none animate-in fade-in duration-700 min-h-0 overflow-hidden">
                   <div className="flex flex-col items-center gap-5">
                     <Image
                       src="/quransite_white_small.png"
@@ -830,12 +820,11 @@ const AIAssistance = () => {
               {/* Message History — only render when there's content */}
               {(messages.length > 0 || isLoading) && (
                 <div
-                  className="flex-1 w-full overflow-y-auto overscroll-contain touch-pan-y"
+                  ref={messageListRef}
+                  className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain touch-pan-y"
                   style={{ WebkitOverflowScrolling: 'touch' }}
                   onScroll={handleScroll}
                 >
-                  {/* Top spacer so first message clears the absolute header */}
-                  <div className="h-20 md:h-24 w-full shrink-0" />
                   
                   <ChatMessageList
                     messages={messages}
@@ -845,19 +834,16 @@ const AIAssistance = () => {
                     toolStatus={toolStatus}
                   />
                   
-                  {/* Bottom spacer so last message clears the absolute input field */}
-                  <div ref={messagesEndRef} className="h-28 md:h-32 w-full shrink-0" />
                 </div>
               )}
             </div>
 
-            {/* AI Control Center & Input Area (ABSOLUTE BOTTOM CONTAINER) */}
+            {/* The composer takes up its own space below the transcript. */}
             <div className={cn(
-              "absolute bottom-0 left-0 right-0 z-10 w-full pt-8 px-4 pb-[env(safe-area-inset-bottom)] touch-none pointer-events-none transition-all duration-300",
-              !isKeyboardVisible ? "pb-20 md:pb-6" : "pb-3 md:pb-6",
+              "relative shrink-0 z-10 w-full px-4 pt-1 pb-3 md:pb-6",
               messages.length > 0 ? "bg-gradient-to-t from-background via-background/95 to-transparent" : "bg-transparent"
             )}>
-              <div className="max-w-3xl mx-auto space-y-4 pointer-events-auto">
+              <div className="max-w-3xl mx-auto space-y-2 md:space-y-3">
 
                 {/* Quoted Context Preview */}
                 {quotedText && (
@@ -951,7 +937,7 @@ const AIAssistance = () => {
                   )}>
                     {/* Invisible ghost element that grows natively with text wrap */}
                     <div
-                      className="col-start-1 row-start-1 invisible whitespace-pre-wrap break-words min-h-[36px] max-h-[160px] w-full py-1.5 px-1 md:py-2 text-base leading-relaxed"
+                      className="col-start-1 row-start-1 invisible whitespace-pre-wrap break-words min-h-[36px] max-h-[min(160px,24dvh)] w-full py-1.5 px-1 md:py-2 text-base leading-relaxed"
                       aria-hidden="true"
                     >
                       {input + ' '}
@@ -959,18 +945,19 @@ const AIAssistance = () => {
                     {/* Actual textarea strictly follows grid cell height */}
                     <Textarea
                       ref={textareaRef}
+                      aria-label="Ask the Quran assistant"
                       placeholder={currentContext.verseKey ? `Ask about Verse ${currentContext.verseKey}...` : "Ask about..."}
                       value={input}
                       rows={1}
                       disabled={isLoading}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
+                        if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                           e.preventDefault();
                           handleSend();
                         }
                       }}
-                      className="col-start-1 row-start-1 h-full min-h-[36px] max-h-[160px] w-full bg-transparent border-0 border-none shadow-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus:outline-none resize-none py-1.5 px-1 md:py-2 text-base text-foreground font-medium placeholder:text-muted-foreground/40 disabled:opacity-50 leading-relaxed scrollbar-hide overflow-y-auto touch-pan-y overscroll-none will-change-[height]"
+                      className="col-start-1 row-start-1 h-full min-h-[36px] max-h-[min(160px,24dvh)] w-full bg-transparent border-0 border-none shadow-none ring-0 ring-offset-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus:outline-none resize-none py-1.5 px-1 md:py-2 text-base text-foreground font-medium placeholder:text-muted-foreground/40 disabled:opacity-50 leading-relaxed scrollbar-hide overflow-y-auto touch-pan-y overscroll-none will-change-[height]"
                     />
                   </div>
 
