@@ -22,6 +22,8 @@ export interface Word {
   position: number;
   audio_url: string | null;
   char_type_name: string;
+  code_v2?: string;
+  v2_page?: number;
   line_number: number;
   page_number: number;
   text_uthmani: string;
@@ -161,7 +163,7 @@ export const fetchVerses = async (
       "text_uthmani";
 
     const response = await fetch(
-      `${BASE_URL}/verses/by_chapter/${surahNumber}?language=${wbwLanguage}&word_translation_language=${wbwLanguage}&words=true&word_fields=${scriptField},audio_url,line_number,page_number&translations=${translationId}&fields=${scriptField}&per_page=${perPage}&page=${page}`,
+      `${BASE_URL}/verses/by_chapter/${surahNumber}?language=${wbwLanguage}&word_translation_language=${wbwLanguage}&words=true&word_fields=${[...new Set([scriptField, "text_uthmani", "code_v2", "v2_page", "audio_url", "line_number", "page_number"])].join(",")}&translations=${translationId}&fields=${scriptField}&per_page=${perPage}&page=${page}`,
       { signal: AbortSignal.timeout(15_000) }
     );
     if (!response.ok) throw new Error("Could not load verses");

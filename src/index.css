@@ -229,25 +229,27 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Professional Mushaf Layout */
-  .mushaf-layout {
-    direction: rtl;
-    text-align: center;
-    word-spacing: 0.15em;
-    line-height: 3.2;
-    font-size: 2.25rem;
-    padding: 2rem 1rem;
+  .mushaf-sheet { container-type: inline-size; }
+
+  .mushaf-text { font-size: 5cqi; }
+
+  .mushaf-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .085em;
+    line-height: 1.95;
   }
 
-  /* Responsive sizing for Mushaf Mode */
-  @media (max-width: 768px) {
-    .mushaf-layout {
-      font-size: 1.35rem;
-      line-height: 2.6;
-      padding: 1rem 0.5rem;
-      word-spacing: 0.1em;
-    }
+  .mushaf-line[data-centered="true"] { justify-content: center; }
+  .mushaf-line button {
+    position: relative;
+    flex: none;
+    font: inherit;
+    white-space: nowrap;
   }
+  .mushaf-line [data-glyph]::before { content: attr(data-glyph); }
+
 
   /* Quran verse styling */
   .quran-verse {
