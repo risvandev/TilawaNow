@@ -2,7 +2,7 @@
 
 import { MushafPage } from "@/components/MushafPage";
 import { groupMushafPages } from "@/lib/mushaf-layout";
-import { sanitizeTajweedMarkup } from "@/lib/quran-markup";
+import { sanitizeQuranMarkup, sanitizeTajweedMarkup } from "@/lib/quran-markup";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -47,11 +47,7 @@ import {
   usePriorityAudios,
   useUserReadingProfile 
 } from "@/hooks/use-quran-queries";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -198,7 +194,10 @@ const WordWithMeaning = React.memo(({
 
   const content = (
 
-    <span
+    <button
+      type="button"
+      lang="ar"
+      title={showTooltip ? [word.translation?.text, showTransliteration && word.transliteration?.text].filter(Boolean).join(" · ") : undefined}
       id={isHighlighted ? "active-word" : undefined}
       className={cn(
         "font-arabic cursor-pointer transition-all duration-200 inline-block text-[inherit]",
@@ -213,35 +212,31 @@ const WordWithMeaning = React.memo(({
       dangerouslySetInnerHTML={script === "text_uthmani_tajweed" ? { __html: sanitizeTajweedMarkup(arabicText) } : undefined}
     >
       {script !== "text_uthmani_tajweed" ? arabicText : undefined}
-    </span>
+    </button>
   );
 
-  if (!showTooltip || (!word.translation && !word.transliteration)) {
+  if (!showTooltip || (!word.translation?.text && !(showTransliteration && word.transliteration?.text))) {
     return content;
   }
 
   return (
-    <span className="group/word relative inline-block">
-      {content}
-      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 opacity-0 group-hover/word:opacity-100 transition-all duration-200 bg-card border border-border shadow-xl rounded-md p-1.5 min-w-max max-w-[16rem] scale-95 group-hover/word:scale-100 origin-bottom flex flex-col items-center justify-center">
-        {word.translation && (
-          <span className="text-sm font-medium text-foreground text-center font-sans block">
-            {word.translation.text}
-          </span>
+    <Popover>
+      <PopoverTrigger asChild>{content}</PopoverTrigger>
+      <PopoverContent side="top" collisionPadding={12} aria-label="Word meaning"
+        onOpenAutoFocus={event => event.preventDefault()}
+        className="w-fit max-w-[min(18rem,calc(100vw-1.5rem))] px-3 py-2 text-center">
+        {word.translation?.text && <p dir="auto" className="text-sm font-medium">{word.translation.text}</p>}
+        {showTransliteration && word.transliteration?.text && (
+          <p dir="auto" className="text-xs italic leading-relaxed text-muted-foreground">{word.transliteration.text}</p>
         )}
-        {showTransliteration && word.transliteration && word.transliteration.text && (
-          <span className="text-[10px] md:text-xs text-muted-foreground italic text-center font-sans block mt-0.5">
-            {word.transliteration.text}
-          </span>
-        )}
-      </span>
-    </span>
+      </PopoverContent>
+    </Popover>
   );
 }, (prev, next) => {
   return prev.isHighlighted === next.isHighlighted &&
     prev.script === next.script &&
     prev.showTransliteration === next.showTransliteration &&
-    prev.word.id === next.word.id;
+    prev.word === next.word;
 });
 
 // Verse Audio Player
@@ -264,9 +259,10 @@ const VerseAudioButton = React.memo(({
     <Button
       variant="ghost"
       size="iconSm"
+      aria-label={isPlaying ? "Pause ayah" : "Play ayah"}
       onClick={isPlaying ? onPause : onPlay}
       className={cn(
-        "text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors",
+        "h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors",
         isPlaying && "text-primary bg-primary/5"
       )}
       disabled={isLoading}
@@ -330,6 +326,8 @@ const VerseRow = React.memo(({
 }) => {
   const verseKey = verse.verse_key;
   const verseAudioData = verseAudios.get(verseKey);
+  const translation = verse.translations?.[0]?.text;
+  const meaning = useMemo(() => translation ? sanitizeQuranMarkup(translation) : "", [translation]);
   const [copied, setCopied] = useState(false);
 
   const handleLocalCopy = () => {
@@ -403,16 +401,15 @@ const VerseRow = React.memo(({
       id={`verse-${surahId}:${verse.verse_number}`} 
       data-ayah-id={verse.verse_number} 
       className={cn(
-        "w-auto md:w-full opacity-0 animate-fade-in group transition-all duration-500 virtual-row",
-        "-mx-4 px-4 md:px-6 md:mx-0 border-b border-white/5 py-5 rounded-none",
+        "w-full group virtual-row",
+        "px-1 sm:px-4 border-b border-border/50 py-5 rounded-none",
         index % 2 === 0 ? "bg-transparent" : "bg-white/[0.015]",
         "md:glass-card md:border md:border-white/10 md:rounded-[2rem] md:p-6 md:mb-4 md:shadow-lg",
         isCurrentVerse && [
           "bg-primary/[0.03] border-b-primary/40",
-          "md:border-primary/50 md:bg-primary/5 md:shadow-[0_0_20px_rgba(var(--primary),0.1)] md:ring-1 md:ring-primary/20 md:scale-[1.01]"
+          "md:border-primary/50 md:bg-primary/5 md:shadow-[0_0_20px_rgba(var(--primary),0.1)] md:ring-1 md:ring-primary/20"
         ]
       )} 
-      style={{ animationFillMode: "forwards" }}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-1 md:gap-2">
@@ -450,22 +447,22 @@ const VerseRow = React.memo(({
           <div className="flex md:hidden items-center gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="iconSm" className="text-muted-foreground h-7 w-7">
+                <Button variant="ghost" size="iconSm" aria-label={`More actions for ayah ${verseKey}`} className="text-muted-foreground h-10 w-10">
                   <MoreVertical className="w-3.5 h-3.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48 bg-card border-border shadow-xl">
                 <DropdownMenuItem onClick={handleLocalCopy} className="gap-2 focus:bg-primary/10 focus:text-primary">
                   {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span className="font-bold text-[10px] uppercase tracking-wider">{copied ? 'Copied' : 'Copy Ayah'}</span>
+                  <span className="font-bold text-xs">{copied ? 'Copied' : 'Copy Ayah'}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => { handleLocalPlayVerse(verse); onSetLoopMode(loopMode === 'AYAH' ? 'NONE' : 'AYAH'); }} className="gap-2 focus:bg-primary/10 focus:text-primary">
                   <Repeat1 className={cn("w-3.5 h-3.5", (loopMode === 'AYAH' && isCurrentVerse) ? "text-primary" : "")} />
-                  <span className="font-bold text-[10px] uppercase tracking-wider">Repeat Ayah</span>
+                  <span className="font-bold text-xs">Repeat Ayah</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onOpenTafsir(verse.verse_key, verse.text_uthmani)} className="gap-2 focus:bg-primary/10 focus:text-primary">
                   <BookOpen className="w-3.5 h-3.5" />
-                  <span className="font-bold text-[10px] uppercase tracking-wider">Read Tafsir</span>
+                  <span className="font-bold text-xs">Read Tafsir</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -473,7 +470,7 @@ const VerseRow = React.memo(({
             <button
               onClick={() => onToggleMark(surahId, verse.verse_number, 'ayah')}
               className={cn(
-                "px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-tight transition-all duration-300 border backdrop-blur-sm shrink-0",
+                "min-h-10 px-2 rounded-md text-xs font-bold uppercase tracking-tight transition-all duration-300 border backdrop-blur-sm shrink-0",
                 marked
                   ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20"
                   : "bg-emerald-500/5 border-emerald-500/20 text-emerald-600"
@@ -486,15 +483,15 @@ const VerseRow = React.memo(({
               variant="ghost" 
               size="sm" 
               onClick={() => handleLocalPlayFromVerse(verse.verse_key)} 
-              className="h-auto py-0.5 px-2 text-[9px] font-bold uppercase tracking-tight text-muted-foreground hover:text-primary hover:bg-primary/10 border border-transparent hover:border-primary/20 rounded-md transition-all duration-300"
+              className="h-10 px-2 text-xs font-bold uppercase tracking-tight text-muted-foreground hover:text-primary hover:bg-primary/10 border border-transparent hover:border-primary/20 rounded-md transition-all duration-300"
             >
               Play Here
             </Button>
           </div>
         </div>
-        <span className="text-xs text-muted-foreground">{verseKey}</span>
+        <span dir="ltr" className="shrink-0 text-sm font-medium tabular-nums text-muted-foreground">{verseKey}</span>
       </div>
-      <div className={`w-full mb-3 py-6 md:py-8 text-3xl md:text-5xl ${surahId === 1 && verse.verse_number === 1 ? 'text-center' : 'text-right'}`} dir="rtl" style={{ lineHeight: 2.2 }}>
+      <div className={`w-full py-2 md:py-4 text-[1.875rem] md:text-[2.5rem] ${surahId === 1 && verse.verse_number === 1 ? 'text-center' : 'text-right'}`} dir="rtl" style={{ lineHeight: 2.2 }}>
         <div className="inline" style={{ wordSpacing: "normal" }}>
           {(verse.words && verse.words.length > 0) ? verse.words.map((w, i, arr) => {
             const isNextWaqf = arr[i + 1]?.char_type_name === "pause";
@@ -514,12 +511,18 @@ const VerseRow = React.memo(({
           }) : <p className="quran-verse">{verse.text_uthmani}</p>}
         </div>
       </div>
-      {verse.translations && verse.translations[0] && <div className="border-t border-border/50 pt-4"><p className="text-muted-foreground text-xs md:text-base leading-relaxed text-left">{verse.translations[0].text.replace(/<[^>]*>/g, "")}</p></div>}
+      {meaning && (
+        <div className="mt-3 border-t border-border/50 pt-4">
+          <div dir="auto" className="max-w-[68ch] text-start text-base leading-[1.75] text-foreground md:text-[1.125rem] [&_p+p]:mt-3 [overflow-wrap:anywhere]"
+            dangerouslySetInnerHTML={{ __html: meaning }} />
+        </div>
+      )}
     </div>
   );
 }, (prev, next) => {
   return (
-    prev.verse.id === next.verse.id &&
+    prev.verse === next.verse &&
+    prev.verseAudios === next.verseAudios &&
     prev.isCurrentVerse === next.isCurrentVerse &&
     prev.isVersePlayingNow === next.isVersePlayingNow &&
     prev.currentWordPosition === next.currentWordPosition &&
